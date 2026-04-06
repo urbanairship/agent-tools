@@ -1,0 +1,31 @@
+{
+  "description": "Register an SMS phone number with opt-in",
+  "request": {
+    "method": "POST",
+    "url": "https://go.urbanairship.com/api/channels/sms",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Content-Type": "application/json",
+      "Authorization": "Basic <base64(app_key:master_secret)>"
+    },
+    "body": {
+      "msisdn": "15035556789",
+      "sender": "12345",
+      "opted_in": "2024-01-15T10:30:00",
+      "timezone": "America/Los_Angeles",
+      "locale_country": "US",
+      "locale_language": "en"
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Location": "https://go.urbanairship.com/api/channels/df6a6b50-9843-0304-d5a5-743f246a4946"
+    },
+    "body": {
+      "ok": true,
+      "channel_id": "df6a6b50-9843-0304-d5a5-743f246a4946",
+      "opt_in": true
+    }
+  }
+}

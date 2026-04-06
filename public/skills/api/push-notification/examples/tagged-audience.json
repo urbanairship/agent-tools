@@ -1,0 +1,10 @@
+{
+  "audience": {
+    "tag": "needs_a_greeting",
+    "group": "new_customer"
+  },
+  "notification": {
+    "alert": "Hi! Welcome to our app."
+  },
+  "device_types": ["ios", "android"]
+}

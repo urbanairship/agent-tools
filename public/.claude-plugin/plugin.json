@@ -1,0 +1,27 @@
+{
+  "name": "airship",
+  "version": "1.0.0",
+  "description": "Airship SDK tools — push notifications, channels, migrations, RTDS, and wallet.",
+  "author": { "name": "Airship", "url": "https://airship.com" },
+  "repository": "https://github.com/urbanairship/agent-tools",
+  "license": "Apache-2.0",
+  "skills": [
+    "./skills/api",
+    "./skills/mobile",
+    "./skills/rtds",
+    "./skills/wallet",
+    "./skills/workflows"
+  ],
+  "mcpServers": {
+    "airship-mcp": {
+      "command": "uvx",
+      "args": ["airship-mcp"],
+      "env": {
+        "AIRSHIP_REGION": "${AIRSHIP_REGION:-us}",
+        "AIRSHIP_BEARER_TOKEN": "${AIRSHIP_BEARER_TOKEN:-}",
+        "AIRSHIP_APP_KEY": "${AIRSHIP_APP_KEY:-}",
+        "AIRSHIP_MASTER_SECRET": "${AIRSHIP_MASTER_SECRET:-}"
+      }
+    }
+  }
+}

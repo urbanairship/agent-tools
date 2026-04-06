@@ -1,0 +1,34 @@
+{
+  "description": "Register an email address with commercial opt-in",
+  "request": {
+    "method": "POST",
+    "url": "https://go.urbanairship.com/api/channels/email",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Content-Type": "application/json",
+      "Authorization": "Basic <base64(app_key:master_secret)>"
+    },
+    "body": {
+      "channel": {
+        "type": "email",
+        "address": "user@example.com",
+        "commercial_opted_in": "2024-01-15T10:30:00",
+        "timezone": "America/Los_Angeles",
+        "locale_country": "US",
+        "locale_language": "en"
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Location": "https://go.urbanairship.com/api/channels/251d3318-b3cb-4e9f-876a-ea3bfa6e47bd"
+    },
+    "body": {
+      "ok": true,
+      "channel_id": "251d3318-b3cb-4e9f-876a-ea3bfa6e47bd",
+      "attributes": {"ok": true},
+      "tags": {"ok": true}
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "description": "Replace an email channel with a new email address",
+  "request": {
+    "method": "POST",
+    "url": "https://go.urbanairship.com/api/channels/email/replace/251d3318-b3cb-4e9f-876a-ea3bfa6e47bd",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Content-Type": "application/json",
+      "Authorization": "Basic <base64(app_key:master_secret)>"
+    },
+    "body": {
+      "channel": {
+        "type": "email",
+        "address": "new-email@example.com",
+        "commercial_opted_in": "2024-01-15T10:30:00Z",
+        "timezone": "America/Los_Angeles",
+        "locale_country": "US",
+        "locale_language": "en"
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Location": "https://go.urbanairship.com/api/channels/email/a7808f6b-5cd8-458b-88d0-96eceEXAMPLE"
+    },
+    "body": {
+      "ok": true,
+      "channel_id": "a7808f6b-5cd8-458b-88d0-96eceEXAMPLE"
+    }
+  },
+  "notes": "The source channel (251d3318-b3cb-4e9f-876a-ea3bfa6e47bd) is uninstalled. The new channel inherits user association from the source channel but does not inherit tags, attributes, or other properties."
+}

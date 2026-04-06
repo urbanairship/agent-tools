@@ -1,0 +1,31 @@
+{
+  "description": "RTDS connection filtered by named user",
+  "request": {
+    "method": "POST",
+    "url": "https://connect.urbanairship.com/api/events",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access-token>",
+      "X-UA-Appkey": "<app-key>"
+    },
+    "body": {
+      "start": "LATEST",
+      "filters": [
+        {
+          "users": [
+            {"named_user_id": "user_12345"}
+          ]
+        }
+      ]
+    }
+  },
+  "response": {
+    "format": "NDJSON",
+    "stream": [
+      "{\"id\":\"event-1\",\"type\":\"OPEN\",\"user\":{\"named_user_id\":\"user_12345\"},...}",
+      "{\"id\":\"event-2\",\"type\":\"CUSTOM\",\"user\":{\"named_user_id\":\"user_12345\"},...}"
+    ]
+  },
+  "notes": "Only returns events for the specified named user. Useful for tracking a specific user's activity."
+}

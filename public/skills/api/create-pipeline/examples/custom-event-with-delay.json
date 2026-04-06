@@ -1,0 +1,26 @@
+{
+  "name": "Delayed Purchase Follow-up",
+  "enabled": true,
+  "immediate_trigger": {
+    "custom_event": {
+      "key": "name",
+      "value": {
+        "equals": "purchased"
+      }
+    }
+  },
+  "timing": {
+    "delay": {
+      "seconds": 3600
+    }
+  },
+  "outcome": {
+    "push": {
+      "audience": "triggered",
+      "device_types": ["ios", "android"],
+      "notification": {
+        "alert": "How are you enjoying {{custom_event.properties.product_name}}? We'd love your feedback!"
+      }
+    }
+  }
+}

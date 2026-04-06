@@ -1,0 +1,46 @@
+{
+  "description": "Example response showing a pipeline with multiple triggers. The immediate_trigger field is returned as an array when there are multiple triggers.",
+  "ok": true,
+  "operation_id": "multi-trigger-example-123",
+  "pipelines": [
+    {
+      "uid": "pipeline-multi-trigger-456",
+      "name": "VIP Purchase Automation",
+      "enabled": true,
+      "status": "live",
+      "creation_time": "2024-01-15T10:30:00Z",
+      "last_modified_time": "2024-01-15T10:30:00Z",
+      "immediate_trigger": [
+        {
+          "custom_event": {
+            "key": "name",
+            "value": {
+              "equals": "purchased"
+            }
+          }
+        },
+        {
+          "tag_added": {
+            "tag": "vip"
+          }
+        }
+      ],
+      "outcome": {
+        "push": {
+          "audience": "triggered",
+          "device_types": [
+            "ios",
+            "android"
+          ],
+          "notification": {
+            "alert": "Thank you for your VIP purchase!"
+          }
+        }
+      },
+      "url": "https://go.urbanairship.com/api/pipelines/pipeline-multi-trigger-456"
+    }
+  ],
+  "total_count": 1,
+  "next_page": null,
+  "prev_page": null
+}

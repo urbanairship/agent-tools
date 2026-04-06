@@ -1,0 +1,32 @@
+{
+  "description": "Update locations on a wallet pass (replaces all existing locations)",
+  "request": {
+    "method": "PUT",
+    "url": "https://go.urbanairship.com/pass/template/123/id/pass-abc-123",
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Basic <base64(app_key:master_secret)>"
+    },
+    "body": {
+      "locations": [
+        {
+          "latitude": 37.7749,
+          "longitude": -122.4194,
+          "relevantText": "Near San Francisco Store"
+        },
+        {
+          "latitude": 34.0522,
+          "longitude": -118.2437,
+          "relevantText": "Near Los Angeles Store"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "ticketId": 12346
+    }
+  }
+}

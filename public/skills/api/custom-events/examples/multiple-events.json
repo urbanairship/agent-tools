@@ -1,0 +1,24 @@
+[
+  {
+    "user": {
+      "named_user_id": "user-123"
+    },
+    "body": {
+      "name": "page_viewed",
+      "properties": {
+        "page": "home"
+      }
+    }
+  },
+  {
+    "user": {
+      "named_user_id": "user-123"
+    },
+    "body": {
+      "name": "button_clicked",
+      "properties": {
+        "button": "signup"
+      }
+    }
+  }
+]

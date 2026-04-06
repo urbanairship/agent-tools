@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "airship": {
+      "command": "uv",
+      "args": ["run", "--directory", "/PATH/TO/internal-agent-tools/public", "airship-mcp"],
+      "env": {
+        "AIRSHIP_APP_KEY": "YOUR_APP_KEY",
+        "AIRSHIP_MASTER_SECRET": "YOUR_MASTER_SECRET",
+        "AIRSHIP_API_URL": "https://go.urbanairship.com"
+      }
+    }
+  }
+}

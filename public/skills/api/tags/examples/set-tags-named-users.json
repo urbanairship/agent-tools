@@ -1,0 +1,9 @@
+{
+  "audience": {
+    "named_user_id": ["user-123"]
+  },
+  "set": {
+    "loyalty": ["gold-member"],
+    "interests": ["sports", "technology", "music"]
+  }
+}

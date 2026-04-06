@@ -1,0 +1,42 @@
+{
+  "description": "Paginated request using start parameter with channel_id from previous page",
+  "request": {
+    "method": "GET",
+    "url": "https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Authorization": "Bearer <token>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Link": "<https:\/\/go.urbanairship.com\/api\/channels?limit=1000&start=a1c0e94e-4b07-4b26-bead-a1c0e94e133c>; rel=\"next\""
+    },
+    "body": {
+      "ok": true,
+      "channels": [
+        {
+          "channel_id": "535ec31e-4b07-4b26-bead-a1c0e94e133c",
+          "device_type": "email",
+          "installed": true,
+          "opt_in": true,
+          "address": "user@example.com",
+          "email_address": "user@example.com",
+          "created": "2020-05-01T18:00:27",
+          "last_registration": "2020-10-07T21:28:35",
+          "named_user_id": "user_12345",
+          "tags": ["newsletter", "vip"],
+          "tag_groups": {
+            "source": ["website"],
+            "status": ["active"]
+          },
+          "commercial_opted_in": "2020-10-28T10:34:22",
+          "transactional_opted_in": "2020-10-28T10:34:22"
+        }
+      ],
+      "next_page": "https://go.urbanairship.com/api/channels?limit=1000&start=a1c0e94e-4b07-4b26-bead-a1c0e94e133c"
+    }
+  },
+  "notes": "Use the channel_id from the last item of the previous page as the start parameter, or use the next_page URL directly."
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Weekly Purchase Summary",
+  "enabled": true,
+  "immediate_trigger": {
+    "custom_event": {
+      "key": "name",
+      "value": {
+        "equals": "purchased"
+      }
+    }
+  },
+  "constraint": [
+    {
+      "rate": {
+        "pushes": 1,
+        "days": 7
+      }
+    }
+  ],
+  "outcome": {
+    "push": {
+      "audience": "triggered",
+      "device_types": ["ios", "android"],
+      "notification": {
+        "alert": "You've made {{custom_event.properties.purchase_count}} purchases this week!"
+      }
+    }
+  }
+}

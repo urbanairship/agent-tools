@@ -1,0 +1,26 @@
+{
+  "name": "Order Confirmation Automation",
+  "enabled": true,
+  "immediate_trigger": {
+    "custom_event": {
+      "key": "name",
+      "value": {
+        "equals": "purchased"
+      }
+    }
+  },
+  "outcome": {
+    "push": {
+      "audience": "triggered",
+      "device_types": ["ios", "android"],
+      "notification": {
+        "alert": "Your order for {{custom_event.properties.product_name}} is confirmed!"
+      },
+      "message": {
+        "title": "Order Confirmation - {{custom_event.properties.product_name}}",
+        "body": "<html><body><h1>Thank you for your purchase!</h1><p><strong>Product:</strong> {{custom_event.properties.product_name}}</p><p><strong>Total:</strong> ${{custom_event.value}}</p><p><strong>Order ID:</strong> {{custom_event.properties.order_id}}</p><p><strong>Estimated Delivery:</strong> {{custom_event.properties.delivery_date}}</p></body></html>",
+        "content_type": "text/html"
+      }
+    }
+  }
+}

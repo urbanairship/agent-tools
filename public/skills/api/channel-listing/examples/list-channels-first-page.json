@@ -1,0 +1,74 @@
+{
+  "description": "List first page of channels without start parameter",
+  "request": {
+    "method": "GET",
+    "url": "https://go.urbanairship.com/api/channels?limit=1000",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Authorization": "Bearer <token>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Link": "<https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c>; rel=\"next\""
+    },
+    "body": {
+      "ok": true,
+      "channels": [
+        {
+          "channel_id": "9c36e8c7-5a73-47c0-9716-99fd3d4197d5",
+          "device_type": "ios",
+          "installed": true,
+          "opt_in": true,
+          "background": true,
+          "push_address": "FE66489F304DC75B8D6E8200DFF8A456E8DAEACEC428B427E9518741C92C6660",
+          "created": "2020-08-08T20:41:06",
+          "last_registration": "2020-10-07T21:28:35",
+          "named_user_id": "some_id_that_maps_to_your_systems",
+          "alias": null,
+          "tags": ["tag1", "tag2"],
+          "tag_groups": {
+            "tag_group_1": ["tag1", "tag2"],
+            "tag_group_2": ["tag1", "tag2"]
+          },
+          "device_attributes": {
+            "ua_device_os": "10",
+            "ua_country": "US",
+            "ua_device_model": "SM-G973U",
+            "ua_local_tz": "America/Los_Angeles",
+            "ua_app_version": "2020-02-01T002322-goat",
+            "ua_location_settings": "true",
+            "ua_language": "en",
+            "ua_sdk_version": "12.2.0",
+            "ua_carrier": "Verizon "
+          },
+          "ios": {
+            "badge": 0,
+            "quiettime": {
+              "start": null,
+              "end": null
+            },
+            "tz": "America/Los_Angeles"
+          }
+        },
+        {
+          "channel_id": "bd36e8c7-5a73-47c0-9716-99fd3d4197d5",
+          "device_type": "android",
+          "installed": true,
+          "opt_in": false,
+          "background": true,
+          "push_address": null,
+          "created": "2020-03-06T18:52:59",
+          "last_registration": "2020-10-07T21:28:35",
+          "named_user_id": "some_id_that_maps_to_your_systems",
+          "tags": ["tag1", "tag2"],
+          "tag_groups": {
+            "tag_group_1": ["tag1", "tag2"]
+          }
+        }
+      ],
+      "next_page": "https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c"
+    }
+  }
+}

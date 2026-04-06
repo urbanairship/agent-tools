@@ -1,0 +1,74 @@
+{
+  "manifest_version": "0.3",
+  "name": "airship-mcp",
+  "display_name": "Airship MCP",
+  "version": "1.0.0",
+  "description": "Airship SDK development server — push notifications, channel management, SDK migration, and build verification.",
+  "long_description": "Provides tools for sending push notifications, managing audience segments and channels, verifying iOS/Android builds, guiding SDK migrations, and accessing Airship skills as prompts.",
+  "author": {
+    "name": "Airship",
+    "url": "https://airship.com"
+  },
+  "license": "Apache-2.0",
+  "keywords": ["airship", "push", "mobile", "sdk", "api", "notifications"],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"]
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "airship-mcp"],
+      "env": {
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "AIRSHIP_APP_KEY": "${user_config.app_key}",
+        "AIRSHIP_MASTER_SECRET": "${user_config.master_secret}",
+        "AIRSHIP_API_URL": "${user_config.api_url}"
+      }
+    }
+  },
+  "user_config": {
+    "app_key": {
+      "type": "string",
+      "title": "App Key",
+      "description": "Your Airship application key",
+      "required": true,
+      "sensitive": true
+    },
+    "master_secret": {
+      "type": "string",
+      "title": "Master Secret",
+      "description": "Your Airship master secret",
+      "required": true,
+      "sensitive": true
+    },
+    "api_url": {
+      "type": "string",
+      "title": "API URL",
+      "description": "Airship API base URL",
+      "required": false,
+      "default": "https://go.urbanairship.com"
+    }
+  },
+  "tools": [
+    { "name": "start", "description": "Main router for Airship SDK tasks" },
+    { "name": "send_push_to_tag", "description": "Send push notification to a tag" },
+    { "name": "send_push_to_channel", "description": "Send push notification to a specific channel" },
+    { "name": "send_custom_push", "description": "Send a custom push notification payload" },
+    { "name": "send_message_center_message", "description": "Send a Message Center (inbox) message" },
+    { "name": "validate_push_payload", "description": "Validate a push payload without sending" },
+    { "name": "lookup_channel", "description": "Look up a channel by ID" },
+    { "name": "get_channel_tags", "description": "List all tags on a channel" },
+    { "name": "get_channel_attributes", "description": "Get custom attributes for a channel" },
+    { "name": "lookup_named_user", "description": "Look up a named user and their channels" },
+    { "name": "list_segments", "description": "List all audience segments" },
+    { "name": "get_segment_info", "description": "Get details for a specific segment" },
+    { "name": "create_segment", "description": "Create a reusable audience segment" },
+    { "name": "delete_segment", "description": "Delete an audience segment" },
+    { "name": "check_build_tools", "description": "Check available iOS/Android build tools" },
+    { "name": "verify_build", "description": "Build and verify an iOS or Android project" },
+    { "name": "start_migration", "description": "Start an interactive SDK migration wizard" },
+    { "name": "migrate_sdk", "description": "Run an SDK migration for a specific version range" }
+  ]
+}

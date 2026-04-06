@@ -1,0 +1,29 @@
+{
+  "description": "RTDS connection filtered by device types",
+  "request": {
+    "method": "POST",
+    "url": "https://connect.urbanairship.com/api/events",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access-token>",
+      "X-UA-Appkey": "<app-key>"
+    },
+    "body": {
+      "start": "LATEST",
+      "filters": [
+        {
+          "device_types": ["ios", "android"]
+        }
+      ]
+    }
+  },
+  "response": {
+    "format": "NDJSON",
+    "stream": [
+      "{\"id\":\"event-1\",\"type\":\"OPEN\",\"device\":{\"device_type\":\"IOS\"},...}",
+      "{\"id\":\"event-2\",\"type\":\"SEND\",\"device\":{\"device_type\":\"ANDROID\"},...}"
+    ]
+  },
+  "notes": "Only returns events for iOS and Android devices. Web, email, SMS, and open channel events are filtered out."
+}

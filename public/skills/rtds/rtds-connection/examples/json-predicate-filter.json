@@ -1,0 +1,42 @@
+{
+  "description": "RTDS connection with JSON Predicate filter for complex logic",
+  "request": {
+    "method": "POST",
+    "url": "https://connect.urbanairship.com/api/events",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access-token>",
+      "X-UA-Appkey": "<app-key>"
+    },
+    "body": {
+      "start": "LATEST",
+      "filters": [
+        {
+          "predicates": [
+            {
+              "and": [
+                {
+                  "scope": ["device"],
+                  "key": "device_type",
+                  "value": {"equals": "ANDROID"}
+                },
+                {
+                  "key": "type",
+                  "value": {"equals": "OPEN"}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "response": {
+    "format": "NDJSON",
+    "stream": [
+      "{\"id\":\"event-1\",\"type\":\"OPEN\",\"device\":{\"device_type\":\"ANDROID\"},...}"
+    ]
+  },
+  "notes": "Returns only OPEN events from Android devices. JSON Predicates allow complex filtering logic beyond standard filters."
+}

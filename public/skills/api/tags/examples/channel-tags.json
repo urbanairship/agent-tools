@@ -1,0 +1,6 @@
+{
+  "add": {
+    "device_properties": ["push_enabled"],
+    "user_preferences": ["newsletter_subscribed"]
+  }
+}

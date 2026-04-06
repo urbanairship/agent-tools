@@ -1,0 +1,30 @@
+{
+  "description": "RTDS connection filtered by event types",
+  "request": {
+    "method": "POST",
+    "url": "https://connect.urbanairship.com/api/events",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access-token>",
+      "X-UA-Appkey": "<app-key>"
+    },
+    "body": {
+      "start": "LATEST",
+      "filters": [
+        {
+          "types": ["OPEN", "SEND", "CLICK"]
+        }
+      ]
+    }
+  },
+  "response": {
+    "format": "NDJSON",
+    "stream": [
+      "{\"id\":\"event-1\",\"type\":\"OPEN\",...}",
+      "{\"id\":\"event-2\",\"type\":\"SEND\",...}",
+      "{\"id\":\"event-3\",\"type\":\"CLICK\",...}"
+    ]
+  },
+  "notes": "Only returns OPEN, SEND, and CLICK events. All other event types are filtered out."
+}

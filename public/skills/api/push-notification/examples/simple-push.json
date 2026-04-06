@@ -1,0 +1,9 @@
+{
+  "audience": {
+    "ios_channel": "9c36e8c7-5a73-47c0-9716-99fd3d4197d5"
+  },
+  "notification": {
+    "alert": "Hello!"
+  },
+  "device_types": ["ios"]
+}

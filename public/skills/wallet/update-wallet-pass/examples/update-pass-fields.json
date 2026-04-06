@@ -1,0 +1,40 @@
+{
+  "description": "Update field values and labels on a wallet pass",
+  "request": {
+    "method": "PUT",
+    "url": "https://go.urbanairship.com/pass/template/123/id/pass-abc-123",
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Basic <base64(app_key:master_secret)>"
+    },
+    "body": {
+      "fields": {
+        "balance": {
+          "value": "$150.00",
+          "changeMessage": "Your balance has been updated to %@"
+        },
+        "memberName": {
+          "value": "John Doe",
+          "label": "Member"
+        },
+        "points": {
+          "value": "2,500",
+          "label": "Reward Points"
+        }
+      },
+      "headers": {
+        "primaryFields": {
+          "value": "VIP Member",
+          "changeMessage": "Your membership status has changed"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "ticketId": 12345
+    }
+  }
+}

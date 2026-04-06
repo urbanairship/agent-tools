@@ -1,0 +1,23 @@
+{
+  "audience": {
+    "named_user": "user-123"
+  },
+  "device_types": ["ios", "android", "email"],
+  "notification": {
+    "alert": "Default message",
+    "ios": {
+      "alert": "iOS message",
+      "badge": "+1"
+    },
+    "android": {
+      "alert": "Android message",
+      "title": "Important"
+    },
+    "email": {
+      "subject": "Email Subject",
+      "html_body": "<h1>Email Content</h1>",
+      "plaintext_body": "Email Content",
+      "message_type": "transactional"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "description": "Register an email address with double opt-in mode",
+  "request": {
+    "method": "POST",
+    "url": "https://go.urbanairship.com/api/channels/email",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <token>"
+    },
+    "body": {
+      "channel": {
+        "type": "email",
+        "address": "newuser@example.com",
+        "timezone": "America/New_York",
+        "locale_country": "US",
+        "locale_language": "en"
+      },
+      "opt_in_mode": "double",
+      "properties": {
+        "source": "website_form",
+        "campaign": "newsletter_signup"
+      },
+      "tag_operations": {
+        "add": {
+          "source": ["website"],
+          "status": ["pending_opt_in"]
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Location": "https://go.urbanairship.com/api/channels/ef625038-70a3-41f1-826f-57bc11dd625a"
+    },
+    "body": {
+      "ok": true,
+      "channel_id": "ef625038-70a3-41f1-826f-57bc11dd625a",
+      "attributes": {"ok": true},
+      "tags": {"ok": true}
+    }
+  },
+  "notes": "This creates a double_opt_in event that can trigger automations. The user must complete opt-in before receiving commercial emails."
+}

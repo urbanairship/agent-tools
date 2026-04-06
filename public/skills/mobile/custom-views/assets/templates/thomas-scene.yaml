@@ -1,0 +1,55 @@
+# Thomas Scene YAML Template for Custom Views
+# Reference your custom view in Airship Thomas scenes
+
+# Simple custom view
+view:
+  type: custom_view
+  name: IDENTIFIER
+  properties:
+    title: "Hello"
+    count: 42
+    enabled: true
+
+# ---
+
+# Custom view with sizing
+# view:
+#   type: custom_view
+#   name: IDENTIFIER
+#   size:
+#     width: 100%    # or specific size like "200"
+#     height: auto   # or specific size like "300"
+#   properties:
+#     key: "value"
+
+# ---
+
+# Custom view in a container layout
+# view:
+#   type: container
+#   items:
+#     - view:
+#         type: label
+#         text: "Header"
+#     - view:
+#         type: custom_view
+#         name: IDENTIFIER
+#         properties:
+#           title: "Content"
+#     - view:
+#         type: label_button
+#         label:
+#           text: "Continue"
+
+# ---
+
+# Full modal scene with custom view
+# version: 1
+# presentation:
+#   type: modal
+# view:
+#   type: custom_view
+#   name: IDENTIFIER
+#   properties:
+#     title: "Welcome"
+#     showCloseButton: true

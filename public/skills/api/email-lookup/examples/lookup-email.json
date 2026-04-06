@@ -1,0 +1,36 @@
+{
+  "description": "Lookup an email channel by email address",
+  "request": {
+    "method": "GET",
+    "url": "https://go.urbanairship.com/api/channels/email/name%40example.com",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Authorization": "Bearer <token>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "channel": {
+        "channel_id": "01234567-890a-bcde-f012-3456789abc0",
+        "device_type": "email",
+        "installed": true,
+        "created": "2020-08-08T20:41:06",
+        "named_user_id": "user_12345",
+        "email_address": "name@example.com",
+        "tag_groups": {
+          "source": ["website"],
+          "status": ["active"]
+        },
+        "address": null,
+        "opt_in": true,
+        "commercial_opted_in": "2020-10-28T10:34:22",
+        "commercial_opted_out": null,
+        "transactional_opted_in": "2020-10-28T10:34:22",
+        "last_registration": "2020-05-01T18:00:27"
+      }
+    }
+  },
+  "notes": "Note that the @ symbol in the email address is URL-encoded as %40 in the path."
+}

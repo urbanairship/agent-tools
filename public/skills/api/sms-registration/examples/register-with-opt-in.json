@@ -1,0 +1,37 @@
+{
+  "description": "Register an SMS phone number without opt-in (triggers double opt-in flow)",
+  "request": {
+    "method": "POST",
+    "url": "https://go.urbanairship.com/api/channels/sms",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+json; version=3",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <token>"
+    },
+    "body": {
+      "msisdn": "15558675309",
+      "sender": "12345",
+      "timezone": "America/New_York",
+      "locale_country": "US",
+      "locale_language": "en",
+      "tag_operations": {
+        "add": {
+          "source": ["website_form"],
+          "status": ["pending_opt_in"]
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Location": "https://go.urbanairship.com/api/channels/34b3dfc1-d717-40fe-89e8-10584ed1c123"
+    },
+    "body": {
+      "ok": true,
+      "channel_id": "34b3dfc1-d717-40fe-89e8-10584ed1c123",
+      "opt_in": false
+    }
+  },
+  "notes": "This creates a channel with pending status. Airship will send an opt-in instruction message. The user must respond with a keyword (typically 'Y') to complete opt-in. You cannot send messages until opt-in is completed."
+}

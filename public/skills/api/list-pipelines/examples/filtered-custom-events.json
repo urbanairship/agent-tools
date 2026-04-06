@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "operation_id": "abc123-def456-ghi789",
+  "pipelines": [
+    {
+      "uid": "pipeline-123",
+      "name": "Purchase Automation",
+      "enabled": true,
+      "status": "live",
+      "immediate_trigger": {
+        "custom_event": {
+          "and": [
+            {
+              "key": "name",
+              "value": {
+                "equals": "purchased"
+              }
+            },
+            {
+              "key": "value",
+              "value": {
+                "greater_than": 50
+              }
+            }
+          ]
+        }
+      },
+      "outcome": {
+        "push": {
+          "audience": "triggered",
+          "device_types": ["ios", "android"],
+          "notification": {
+            "alert": "Thank you for your purchase!"
+          }
+        }
+      }
+    }
+  ],
+  "total_count": 1,
+  "next_page": null,
+  "prev_page": null
+}

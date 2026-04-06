@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "operation_id": "ef625038-70a3-41f1-826f-57bc11dd625a",
+  "pipelines": [
+    {
+      "uid": "3987f98s-89s3-cx98-8z89-89adjkl29zds",
+      "name": "Purchase Event Automation",
+      "enabled": true,
+      "status": "live",
+      "creation_time": "2024-01-15T10:30:00Z",
+      "last_modified_time": "2024-01-15T10:30:00Z",
+      "immediate_trigger": {
+        "custom_event": {
+          "key": "name",
+          "value": {
+            "equals": "purchased"
+          }
+        }
+      },
+      "outcome": {
+        "push": {
+          "audience": "triggered",
+          "device_types": [
+            "ios",
+            "android"
+          ],
+          "notification": {
+            "alert": "Thank you for your purchase!"
+          }
+        }
+      },
+      "url": "https://go.urbanairship.com/api/pipelines/3987f98s-89s3-cx98-8z89-89adjkl29zds"
+    }
+  ],
+  "total_count": 1,
+  "next_page": null,
+  "prev_page": null
+}

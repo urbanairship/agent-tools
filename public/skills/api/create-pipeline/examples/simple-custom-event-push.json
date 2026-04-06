@@ -1,0 +1,21 @@
+{
+  "name": "Purchase Confirmation",
+  "enabled": true,
+  "immediate_trigger": {
+    "custom_event": {
+      "key": "name",
+      "value": {
+        "equals": "purchased"
+      }
+    }
+  },
+  "outcome": {
+    "push": {
+      "audience": "triggered",
+      "device_types": ["ios", "android"],
+      "notification": {
+        "alert": "Thank you for purchasing {{custom_event.properties.product_name}}! Your order total was ${{custom_event.value}}."
+      }
+    }
+  }
+}

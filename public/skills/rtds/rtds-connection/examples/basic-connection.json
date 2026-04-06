@@ -1,0 +1,24 @@
+{
+  "description": "Basic RTDS connection starting from latest events",
+  "request": {
+    "method": "POST",
+    "url": "https://connect.urbanairship.com/api/events",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access-token>",
+      "X-UA-Appkey": "<app-key>"
+    },
+    "body": {
+      "start": "LATEST"
+    }
+  },
+  "response": {
+    "format": "NDJSON",
+    "stream": [
+      "{\"id\":\"event-1\",\"type\":\"OPEN\",\"occurred\":\"2024-01-15T10:30:00Z\",\"offset\":\"offset-1\",...}",
+      "{\"id\":\"event-2\",\"type\":\"SEND\",\"occurred\":\"2024-01-15T10:30:01Z\",\"offset\":\"offset-2\",...}"
+    ]
+  },
+  "notes": "The response is a continuous stream of newline-delimited JSON events. Each line is a complete JSON object."
+}

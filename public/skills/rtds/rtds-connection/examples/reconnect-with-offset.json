@@ -1,0 +1,28 @@
+{
+  "description": "Reconnect to RTDS stream using stored offset",
+  "request": {
+    "method": "POST",
+    "url": "https://connect.urbanairship.com/api/events",
+    "headers": {
+      "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access-token>",
+      "X-UA-Appkey": "<app-key>"
+    },
+    "body": {
+      "resume_offset": "offset-abc123",
+      "filters": [
+        {
+          "types": ["OPEN", "SEND", "CLICK"]
+        }
+      ]
+    }
+  },
+  "response": {
+    "format": "NDJSON",
+    "stream": [
+      "{\"id\":\"event-after-offset\",\"type\":\"OPEN\",\"offset\":\"offset-next\",...}"
+    ]
+  },
+  "notes": "Resumes the stream from the specified offset. Use the last successfully processed offset to avoid missing events after a disconnection."
+}
