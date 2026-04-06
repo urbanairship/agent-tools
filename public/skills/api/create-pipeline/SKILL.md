@@ -15,12 +15,20 @@ This skill enables agents to create pipelines (automations) in Airship that auto
 
 **Method**: `POST`  
 **Path**: `/api/pipelines`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/pipelines`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
+
+**Path**: `/api/pipelines`
 
 ## Authentication
 
-**Required**: Bearer Token, Basic Auth, or OAuth2 Token with `pln` scope
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `pln` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 **Headers**:
 ```
@@ -272,6 +280,7 @@ Rate limiting constraints:
   "ok": true,
   "operation_id": "ef625038-70a3-41f1-826f-57bc11dd625a",
   "pipeline_urls": ["https:\/\/go.urbanairship.com/api/pipelines/4d3ff1fd-9ce6-5ea4-5dc9-5ccbd38597f4"]
+  // Note: pipeline_urls hostname reflects the base URL used for the request (US or EU)
 }
 ```
 

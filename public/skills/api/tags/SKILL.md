@@ -29,14 +29,18 @@ There are two main endpoints for tag management:
 
 **Method**: `POST`  
 **Path**: `/api/named_users/tags`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/named_users/tags`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
 
 ### Authentication
 
-- **Basic Auth**: `Authorization: Basic <base64(app_key:master_secret)>`
-- **Bearer Token**: `Authorization: Bearer <token>`
-- **OAuth2**: `Authorization: Bearer <oauth_token>` with scope `nu`
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `nu` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 ### Request Schema
 
@@ -90,14 +94,14 @@ There are two main endpoints for tag management:
 
 **Method**: `POST`  
 **Path**: `/api/channels/{channel_id}/tags`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/channels/{channel_id}/tags`
+**Base URL**: (same as above)
 
 ### Authentication
 
-- **Basic Auth**: `Authorization: Basic <base64(app_key:master_secret)>`
-- **Bearer Token**: `Authorization: Bearer <token>`
-- **OAuth2**: `Authorization: Bearer <oauth_token>` with scope `chn`
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `chn` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 ### Request Schema
 

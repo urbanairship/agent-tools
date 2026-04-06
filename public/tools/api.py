@@ -2,6 +2,12 @@
 Tools for Airship API operations.
 All tools that perform API operations (non-informational).
 
+Auth initialization paths (in priority order):
+  1. OAuth 2.0 — call ``init_oauth()`` at server startup when AIRSHIP_CLIENT_ID is set.
+                 Fetches a JWT and stores it as a Bearer token; uses api.asnapius.com hostname.
+  2. Bearer Token — ``init_auth()`` picks this up automatically from AIRSHIP_BEARER_TOKEN.
+  3. Basic Auth — ``init_auth()`` falls back to AIRSHIP_APP_KEY + AIRSHIP_MASTER_SECRET.
+
 IMPORTANT: The httpx.AsyncClient is created lazily and persists for the server lifetime.
 When the MCP server shuts down, call cleanup() to properly close the client.
 """
@@ -90,6 +96,33 @@ def init_auth():
                 "Set AIRSHIP_BEARER_TOKEN for the preferred auth method.",
                 stacklevel=2,
             )
+
+
+async def init_oauth() -> None:
+    """Initialize authentication using OAuth 2.0 client credentials.
+
+    Fetches a JWT from the Airship OAuth token endpoint and stores it as the
+    Bearer token so all existing code paths carry it through automatically.
+    Creates the main ``client`` pointed at the OAuth-specific Go API hostname.
+
+    Should be called once at server startup when AIRSHIP_CLIENT_ID is set.
+    """
+    global auth, client, basic_client
+    if auth is None:
+        auth = AirshipAuth()
+
+    token = await auth.fetch_oauth_token()
+    auth.bearer_token = token
+    auth.using_oauth = True
+
+    # Re-create the client targeting the OAuth Go API hostname.
+    if client is not None:
+        await client.aclose()
+    client = auth.create_client(api="go", oauth_token=True)
+
+    # Provision basic_client if Basic Auth creds are also available.
+    if auth.app_key and auth.master_secret and basic_client is None:
+        basic_client = auth.create_client(api="go", force_basic=True)
 
 
 async def cleanup():

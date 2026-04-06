@@ -16,6 +16,7 @@ import json
 import tempfile
 import subprocess
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
@@ -124,6 +125,20 @@ async def _fetch_skills(ctx=None) -> Dict[str, Any]:
     return {"status": "success", "action": action, "path": str(_SKILLS_CACHE_DIR)}
 
 
+@asynccontextmanager
+async def lifespan(app):
+    """Server lifespan: initialize OAuth on startup; clean up clients on shutdown."""
+    if os.environ.get("AIRSHIP_CLIENT_ID"):
+    if os.environ.get("AIRSHIP_CLIENT_ID"):
+        try:
+            await api_tools.init_oauth()
+        except Exception as e:
+            print(f"OAuth initialization failed: {e}")
+            raise
+    yield
+    await api_tools.cleanup()
+
+
 # Create FastMCP server
 mcp = FastMCP(
     name="Airship MCP",
@@ -182,7 +197,8 @@ mcp = FastMCP(
 
     iOS, Android, React Native, Flutter, Capacitor, Cordova, .NET
     """,
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 mcp.add_middleware(ErrorHandlingMiddleware(

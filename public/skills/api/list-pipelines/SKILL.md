@@ -15,14 +15,21 @@ This skill enables agents to list pipelines (automations) in Airship with suppor
 
 **Method**: `GET`  
 **Path**: `/api/pipelines` or `/api/pipelines/filtered`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URLs**: 
-- `https://go.urbanairship.com/api/pipelines`
-- `https://go.urbanairship.com/api/pipelines/filtered`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
+
+**Paths**:
+- `/api/pipelines`
+- `/api/pipelines/filtered`
 
 ## Authentication
 
-**Required**: Bearer Token or OAuth2 Token with `pln` scope
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `pln` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN`. `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 **Headers**:
 ```
@@ -100,6 +107,7 @@ All parameters from `/api/pipelines`, plus:
   ],
   "total_count": 42,
   "next_page": "https:\/\/go.urbanairship.com/api/pipelines/filtered?start=20&limit=20",
+  // Note: url and next_page hostnames reflect the base URL used for the request (US or EU)
   "prev_page": null
 }
 ```

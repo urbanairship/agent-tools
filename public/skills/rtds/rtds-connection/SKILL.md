@@ -19,7 +19,7 @@ This skill enables agents to connect to Airship's Real-Time Data Streaming (RTDS
 - North America: `https://connect.urbanairship.com`
 - Europe: `https://connect.asnapieu.com`
 
-**Full URL**: `https://connect.urbanairship.com/api/events`
+**Path**: `/api/events`
 
 ## Authentication
 

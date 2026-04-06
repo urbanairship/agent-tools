@@ -2,11 +2,12 @@
   "description": "Update locations on a wallet pass (replaces all existing locations)",
   "request": {
     "method": "PUT",
-    "url": "https://go.urbanairship.com/pass/template/123/id/pass-abc-123",
+    "url": "https://wallet-api.urbanairship.com/v1/pass/template/123/id/pass-abc-123",
     "headers": {
+      "Api-Revision": "1.2",
       "Accept": "application/json",
       "Content-Type": "application/json",
-      "Authorization": "Basic <base64(app_key:master_secret)>"
+      "Authorization": "Bearer <access_token>"
     },
     "body": {
       "locations": [

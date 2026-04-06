@@ -18,6 +18,8 @@
       "args": ["airship-mcp"],
       "env": {
         "AIRSHIP_REGION": "${AIRSHIP_REGION:-us}",
+        "AIRSHIP_CLIENT_ID": "${AIRSHIP_CLIENT_ID:-}",
+        "AIRSHIP_CLIENT_SECRET": "${AIRSHIP_CLIENT_SECRET:-}",
         "AIRSHIP_BEARER_TOKEN": "${AIRSHIP_BEARER_TOKEN:-}",
         "AIRSHIP_APP_KEY": "${AIRSHIP_APP_KEY:-}",
         "AIRSHIP_MASTER_SECRET": "${AIRSHIP_MASTER_SECRET:-}"

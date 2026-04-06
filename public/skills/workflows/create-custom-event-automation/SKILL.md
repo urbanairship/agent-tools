@@ -10,7 +10,7 @@ This workflow demonstrates creating a pipeline (automation) that triggers when a
 ## Prerequisites
 
 - Airship account with API access
-- Bearer token with `pln` scope (for pipelines API)
+- OAuth token with `pln` scope (for pipelines API)
 - Custom Event name and structure defined
 - Understanding of which Custom Event properties will be available for personalization
 

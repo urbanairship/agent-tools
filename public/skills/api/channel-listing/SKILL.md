@@ -15,12 +15,20 @@ List all channels registered to an app key with pagination support. Channels are
 
 **Method**: `GET`  
 **Path**: `/api/channels`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/channels`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
+
+**Path**: `/api/channels`
 
 ## Authentication
 
-Supports Basic Auth, Bearer Token, or OAuth2 with scope `chn`.
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `chn` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 ## Request Headers
 
@@ -67,6 +75,7 @@ Uses cursor-based pagination with `start` parameter:
     }
   ],
   "next_page": "https:\/\/go.urbanairship.com\/api\/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c"
+  // Note: next_page hostname reflects the base URL used for the request (US or EU)
 }
 ```
 

@@ -15,15 +15,20 @@ This skill enables agents to replace an email channel with a new email address. 
 
 **Method**: `POST`  
 **Path**: `/api/channels/email/replace/{channel_id}`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/channels/email/replace/{channel_id}`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
+
+**Path**: `/api/channels/email/replace/{channel_id}`
 
 ## Authentication
 
-Supports multiple authentication methods:
-- **Basic Auth**: `Authorization: Basic <base64(app_key:master_secret)>`
-- **Bearer Token**: `Authorization: Bearer <token>`
-- **OAuth2**: `Authorization: Bearer <oauth_token>` with scope `chn`
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `chn` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 ## Request Headers
 

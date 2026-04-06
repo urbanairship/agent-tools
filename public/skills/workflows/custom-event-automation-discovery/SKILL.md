@@ -10,8 +10,8 @@ This workflow discovers all pipelines (automations) triggered by Custom Events a
 ## Prerequisites
 
 - Airship account with API access
-- Bearer token with `pln` scope (for pipelines API)
-- Bearer token with `evt` scope (for custom events API)
+- OAuth token with `pln` scope (for pipelines API)
+- OAuth token with `evt` scope (for custom events API)
 - Test user identifier (named_user_id or channel_id) for submitting sample events
 
 ## Skills Required

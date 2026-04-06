@@ -15,12 +15,19 @@ This skill enables agents to submit custom events to Airship for user tracking, 
 
 **Method**: `POST`  
 **Path**: `/api/custom-events`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/custom-events`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
+
+**Path**: `/api/custom-events`
 
 ## Authentication
 
-**Required**: Bearer Token or OAuth2 Token with `evt` scope
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `evt` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` + `AIRSHIP_APP_KEY`. `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 **Headers**:
 ```

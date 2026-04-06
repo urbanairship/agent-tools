@@ -18,13 +18,19 @@ uv run airship-mcp
 
 ## Environment Variables
 
-**Required for Push API tools:**
-- `AIRSHIP_APP_KEY` - Your Airship app key
-- `AIRSHIP_MASTER_SECRET` - Your master secret
-- `AIRSHIP_API_URL` - Optional, defaults to https://go.urbanairship.com
+**Authentication** (at least one method required, in priority order):
+- `AIRSHIP_CLIENT_ID` + `AIRSHIP_CLIENT_SECRET` + `AIRSHIP_APP_KEY` — **recommended for production**; OAuth 2.0 client credentials obtained from go.airship.com > Settings > APIs & Integrations > OAuth. All three are required: the app key is the token subject (`sub=app:<key>`) in the token request.
+- `AIRSHIP_BEARER_TOKEN` — dashboard-generated Bearer token; simpler alternative to OAuth
+- `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` — Basic Auth fallback
 
-**Optional:**
-- `AIRSHIP_MCP_MOUNT_XCODE=true` - Mount XcodeBuildMCP for iOS simulator tools
+**Region:**
+- `AIRSHIP_REGION` — `us` (default) or `eu`
+
+**Overrides:**
+- `AIRSHIP_API_URL` — override the Go API base URL entirely (staging, proxies, etc.)
+
+**Optional integrations:**
+- `AIRSHIP_MCP_MOUNT_XCODE=true` — mount XcodeBuildMCP for iOS simulator tools
 
 ## MCP Configuration
 
@@ -35,8 +41,9 @@ uv run airship-mcp
       "command": "uv",
       "args": ["run", "--directory", "/path/to/internal-agent-tools/public", "airship-mcp"],
       "env": {
-        "AIRSHIP_APP_KEY": "your_key",
-        "AIRSHIP_MASTER_SECRET": "your_secret"
+        "AIRSHIP_BEARER_TOKEN": "your_bearer_token",
+        "AIRSHIP_APP_KEY": "your_app_key",
+        "AIRSHIP_REGION": "us"
       }
     }
   }

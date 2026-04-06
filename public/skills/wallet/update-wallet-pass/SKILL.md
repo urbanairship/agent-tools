@@ -15,27 +15,43 @@ This skill enables agents to update fields on a wallet pass using an external ID
 
 **Method**: `PUT`  
 **Path**: `/pass/template/{templateId}/id/{passExternalId}`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/pass/template/{templateId}/id/{passExternalId}`
+**Base URL**:
+- US: `https://wallet-api.urbanairship.com/v1`
+- EU: `https://wallet-api.asnapieu.com/v1`
+
+**Path**: `/pass/template/{templateId}/id/{passExternalId}`
 
 ## Authentication
 
-**Required**: Basic Auth
+**Preferred**: OAuth 2.0 Bearer token  
+**Fallback**: Basic Auth (`app_key:master_secret`) for environments not using OAuth
 
-**Headers**:
-```
-Authorization: Basic <base64(app_key:master_secret)>
-Accept: application/json
-Content-Type: application/json
-```
+### OAuth (recommended)
+
+1. Request a token from the OAuth endpoint for your region.
+2. Use the token as `Authorization: Bearer <access_token>`.
+3. Ensure token includes the `wpas` scope for pass operations.
+
+OAuth token endpoints:
+- US: `https://oauth2.asnapius.com/token`
+- EU: `https://oauth2.asnapieu.com/token`
+
+### Basic Auth (fallback)
+
+If OAuth is not configured, use:
+`Authorization: Basic <base64(app_key:master_secret)>`
 
 ## Request Headers
 
 ```
+Api-Revision: 1.2
 Accept: application/json
 Content-Type: application/json
-Authorization: Basic <base64(app_key:master_secret)>
+Authorization: Bearer <access_token>
 ```
+
+If using fallback auth:
+`Authorization: Basic <base64(app_key:master_secret)>`
 
 ## Request Schema
 
@@ -208,5 +224,5 @@ None currently. This is the first wallet skill.
 ## Additional Resources
 
 - [Wallet API Reference](https://docs.airship.com/developer/rest-api/wallet/)
-- [OpenAPI Specification](https://docs.airship.com/developer/rest-api/)
+- [Wallet OpenAPI Specification](https://www.airship.com/docs/openapi/wallet/spec.json)
 - [Update Passes Guide](https://docs.airship.com/guides/wallet/user-guide/updating-passes/)

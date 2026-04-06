@@ -14,19 +14,25 @@ This skill enables agents to associate channels (devices) with named users, crea
 ## API Endpoint
 
 **Primary Endpoint**: `POST /api/named_users/associate`  
-**Base URL**: `https://go.urbanairship.com`  
-**Full URL**: `https://go.urbanairship.com/api/named_users/associate`
+**Base URL**:
+- US: `https://go.urbanairship.com`
+- EU: `https://go.airship.eu`
+- US (OAuth): `https://api.asnapius.com`
+- EU (OAuth): `https://api.asnapieu.com`
+
+**Path**: `/api/named_users/associate`
 
 ### Additional Endpoint
 
 **Disassociate Endpoint**: `POST /api/named_users/disassociate`  
-**Full URL**: `https://go.urbanairship.com/api/named_users/disassociate`
+**Path**: `/api/named_users/disassociate`
 
 ## Authentication
 
-- **Basic Auth**: `Authorization: Basic <base64(app_key:master_secret)>`
-- **Bearer Token**: `Authorization: Bearer <token>`
-- **OAuth2**: `Authorization: Bearer <oauth_token>` with scope `nu`
+- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `nu` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+
+> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
 
 ## Request Headers
 

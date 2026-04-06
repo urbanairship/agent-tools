@@ -1,17 +1,22 @@
 """
 Authentication module for Airship API.
-Prefers Bearer token auth; falls back to Basic Auth (app key + master secret).
+Supports three auth methods in priority order:
+  1. OAuth 2.0 client credentials (AIRSHIP_CLIENT_ID + AIRSHIP_CLIENT_SECRET) — recommended for production
+  2. Bearer token (AIRSHIP_BEARER_TOKEN) — simpler, dashboard-generated
+  3. Basic Auth (AIRSHIP_APP_KEY + AIRSHIP_MASTER_SECRET) — fallback
 
-Bearer tokens are the preferred credential for all currently implemented
-endpoints. Basic Auth is retained as a fallback for endpoints that do not
-support Bearer (e.g. message deletion, compliance events) and for users who
-have not yet configured a token.
+Bearer and Basic Auth are handled synchronously at init time.
+OAuth client credentials require an async token fetch at server startup via
+``fetch_oauth_token()``, which returns a JWT that is then stored as
+``bearer_token`` and used by all existing Bearer Token code paths.
 
 Environment variables
 ---------------------
 AIRSHIP_REGION         — "us" (default) or "eu"
-AIRSHIP_BEARER_TOKEN   — preferred; obtain from go.airship.com > APIs & Integrations
-AIRSHIP_APP_KEY        — required alongside bearer token (used for admin URL construction);
+AIRSHIP_CLIENT_ID      — OAuth 2.0 client ID; obtain from go.airship.com > Settings > APIs & Integrations > OAuth
+AIRSHIP_CLIENT_SECRET  — OAuth 2.0 client secret; used together with AIRSHIP_CLIENT_ID
+AIRSHIP_BEARER_TOKEN   — dashboard-generated Bearer token; used when OAuth creds are not set
+AIRSHIP_APP_KEY        — required alongside Bearer token (used for admin URL construction);
                          also required for Basic Auth fallback
 AIRSHIP_MASTER_SECRET  — required only when falling back to Basic Auth
 
@@ -100,28 +105,72 @@ class AirshipAuth:
         app_key: Optional[str] = None,
         master_secret: Optional[str] = None,
         bearer_token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
         region: Optional[Region] = None,
     ):
         self.bearer_token = bearer_token or os.environ.get("AIRSHIP_BEARER_TOKEN")
         self.app_key = app_key or os.environ.get("AIRSHIP_APP_KEY")
         self.master_secret = master_secret or os.environ.get("AIRSHIP_MASTER_SECRET")
+        self.client_id = client_id or os.environ.get("AIRSHIP_CLIENT_ID")
+        self.client_secret = client_secret or os.environ.get("AIRSHIP_CLIENT_SECRET")
         self.region: Region = region or os.environ.get("AIRSHIP_REGION", "us").lower()  # type: ignore[assignment]
+        self.using_oauth: bool = False
 
         if self.region not in ("us", "eu"):
             raise ValueError(
                 f"Invalid AIRSHIP_REGION {self.region!r}. Must be 'us' or 'eu'."
             )
 
-        if not self.bearer_token and (not self.app_key or not self.master_secret):
+        has_oauth = bool(self.client_id and self.client_secret)
+        if not has_oauth and not self.bearer_token and (not self.app_key or not self.master_secret):
             raise ValueError(
                 "Airship credentials not provided. "
-                "Set AIRSHIP_BEARER_TOKEN (preferred) or both AIRSHIP_APP_KEY and "
+                "Set AIRSHIP_CLIENT_ID + AIRSHIP_CLIENT_SECRET (recommended), "
+                "AIRSHIP_BEARER_TOKEN, or both AIRSHIP_APP_KEY and "
                 "AIRSHIP_MASTER_SECRET environment variables."
             )
 
     @property
     def using_bearer(self) -> bool:
         return bool(self.bearer_token)
+
+    async def fetch_oauth_token(self) -> str:
+        """Fetch an OAuth 2.0 access token using client credentials.
+
+        POSTs to the OAuth token endpoint for the configured region with
+        ``grant_type=client_credentials``.  The returned JWT can be used as
+        a Bearer token with the api.asnapius.com / api.asnapieu.com hostname.
+
+        Raises:
+            ValueError: If client_id or client_secret are not set.
+            httpx.HTTPStatusError: If the token endpoint returns an error.
+        """
+        if not self.client_id or not self.client_secret:
+            raise ValueError(
+                "AIRSHIP_CLIENT_ID and AIRSHIP_CLIENT_SECRET must be set to use OAuth."
+            )
+        if not self.app_key:
+            raise ValueError(
+                "AIRSHIP_APP_KEY must be set to use OAuth (required as the token subject)."
+            )
+
+        token_base = get_base_url("oauth", self.region)
+        credentials = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
+
+        async with httpx.AsyncClient() as http:
+            response = await http.post(
+                f"{token_base}/token",
+                headers={
+                    "Authorization": f"Basic {credentials}",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                },
+                data={"grant_type": "client_credentials", "sub": f"app:{self.app_key}"},
+                timeout=30.0,
+            )
+            response.raise_for_status()
+            return response.json()["access_token"]
 
     def get_basic_auth_header(self) -> str:
         """Generate Basic Auth header value."""
@@ -199,13 +248,15 @@ class AirshipAuth:
 
 def validate_credentials() -> bool:
     """Validate that usable Airship credentials are available in the environment."""
+    has_oauth = bool(os.environ.get("AIRSHIP_CLIENT_ID")) and bool(os.environ.get("AIRSHIP_CLIENT_SECRET"))
     has_bearer = bool(os.environ.get("AIRSHIP_BEARER_TOKEN"))
     has_basic = bool(os.environ.get("AIRSHIP_APP_KEY")) and bool(os.environ.get("AIRSHIP_MASTER_SECRET"))
 
-    if not has_bearer and not has_basic:
+    if not has_oauth and not has_bearer and not has_basic:
         print(
             "Airship credentials not configured. "
-            "Set AIRSHIP_BEARER_TOKEN (preferred), or both AIRSHIP_APP_KEY and AIRSHIP_MASTER_SECRET."
+            "Set AIRSHIP_CLIENT_ID + AIRSHIP_CLIENT_SECRET (recommended), "
+            "AIRSHIP_BEARER_TOKEN, or both AIRSHIP_APP_KEY and AIRSHIP_MASTER_SECRET."
         )
         return False
     return True
