@@ -2,7 +2,7 @@
   "mcpServers": {
     "airship": {
       "command": "uv",
-      "args": ["run", "--directory", "/PATH/TO/internal-agent-tools/public", "airship-mcp"],
+      "args": ["run", "--directory", "/PATH/TO/agent-tools", "airship-mcp"],
       "env": {
         "AIRSHIP_CLIENT_ID": "your_client_id",
         "AIRSHIP_CLIENT_SECRET": "your_client_secret",

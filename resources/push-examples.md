@@ -162,7 +162,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Content Available (Silent Push)
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios"],
   "notification": {
     "alert": "New content available",
@@ -207,7 +207,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Banner with Deep Link
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios"],
   "in_app": {
     "alert": "Airship test",
@@ -301,7 +301,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Landing Page with Media Attachment (iOS)
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios"],
   "notification": {
     "ios": {
@@ -331,7 +331,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Landing Page with HTML Content (Android)
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["android"],
   "notification": {
     "android": {
@@ -437,7 +437,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Push with Deep Link to Message Center
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios", "android"],
   "notification": {
     "ios": {
@@ -468,7 +468,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Message Center with Interactive HTML Button
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios", "android"],
   "notification": {
     "android": {
@@ -493,7 +493,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Message Center with Custom Icon
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios", "android"],
   "notification": {
     "alert": "Don't forget to drink water and stay hydrated!",
@@ -708,7 +708,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Interactive with Tag Actions
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios"],
   "notification": {
     "ios": {
@@ -729,7 +729,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Interactive with Localization
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios"],
   "notification": {
     "ios": {
@@ -899,7 +899,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Push + Message Center + In-App Message
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios"],
   "notification": {
     "ios": {
@@ -932,7 +932,7 @@ Complete examples of valid push payloads for the Airship API.
 ### Message Center with Deep Link Button
 ```json
 {
-  "audience": {"tag": "david"},
+  "audience": {"tag": "my-tag"},
   "device_types": ["ios", "android"],
   "notification": {
     "ios": {

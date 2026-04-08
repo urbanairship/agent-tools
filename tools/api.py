@@ -561,12 +561,7 @@ async def send_custom_push(
         response.raise_for_status()
         result = response.json()
 
-        # Extract push IDs and create URLs
         push_ids = result.get("push_ids", [])
-        admin_urls = []
-        if push_ids and auth.app_key:
-            for push_id in push_ids:
-                admin_urls.append(f"https://go-admin.urbanairship.com/admin/flight_deck/apps/{auth.app_key}/messages/{push_id}")
 
         return {
             "status": "sent",
@@ -574,7 +569,6 @@ async def send_custom_push(
             "base_url": str(client.base_url),
             "payload": payload,
             "push_ids": push_ids,
-            "admin_urls": admin_urls,
             "result": result
         }
     except httpx.HTTPStatusError as e:

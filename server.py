@@ -129,7 +129,6 @@ async def _fetch_skills(ctx=None) -> Dict[str, Any]:
 async def lifespan(app):
     """Server lifespan: initialize OAuth on startup; clean up clients on shutdown."""
     if os.environ.get("AIRSHIP_CLIENT_ID"):
-    if os.environ.get("AIRSHIP_CLIENT_ID"):
         try:
             await api_tools.init_oauth()
         except Exception as e:
@@ -1854,69 +1853,69 @@ Run verify_build(project_path='{project_path}')
 
 
 # =============================================================================
-# Slides Tool
+# Internal-only Tools (registered only when internal skills dir is present)
 # =============================================================================
 
-_SLIDES_SCRIPT = Path(__file__).parent.parent / "internal" / "slides" / "scripts" / "generate.py"
+if _INTERNAL_SKILLS_DIR.exists():
+    _SLIDES_SCRIPT = _INTERNAL_SKILLS_DIR / "slides" / "scripts" / "generate.py"
 
+    @mcp.tool
+    async def generate_slides(ctx: Context, slides_json: str, output_path: str) -> Dict[str, Any]:
+        """
+        Generate a branded Airship presentation (.pptx) from a JSON slide spec.
 
-@mcp.tool
-async def generate_slides(ctx: Context, slides_json: str, output_path: str) -> Dict[str, Any]:
-    """
-    Generate a branded Airship presentation (.pptx) from a JSON slide spec.
+        IMPORTANT: Before building the slides_json, invoke the MCP prompt named "slides" to load
+        the full layout reference, brand rules, and JSON schema. Do not guess at layouts or field
+        names — read the skill first, then build the spec.
 
-    IMPORTANT: Before building the slides_json, invoke the MCP prompt named "slides" to load
-    the full layout reference, brand rules, and JSON schema. Do not guess at layouts or field
-    names — read the skill first, then build the spec.
+        Args:
+            slides_json: JSON string with a "slides" array. Each slide requires a "layout" field
+                         plus layout-specific fields. Full schema is in the "slides" MCP prompt.
+            output_path: Absolute path where the .pptx file should be saved (e.g. ~/Desktop/deck.pptx).
+        """
+        if not _SLIDES_SCRIPT.exists():
+            return {
+                "status": "error",
+                "message": "Slides script not found. This tool requires the internal slides skill to be installed.",
+            }
 
-    Args:
-        slides_json: JSON string with a "slides" array. Each slide requires a "layout" field
-                     plus layout-specific fields. Full schema is in the "slides" MCP prompt.
-        output_path: Absolute path where the .pptx file should be saved (e.g. ~/Desktop/deck.pptx).
-    """
-    if not _SLIDES_SCRIPT.exists():
-        return {
-            "status": "error",
-            "message": f"Slides script not found at {_SLIDES_SCRIPT}. This tool requires the internal slides skill to be installed.",
-        }
+        # Validate JSON
+        try:
+            slides_data = json.loads(slides_json)
+        except json.JSONDecodeError as e:
+            return {"status": "error", "message": f"Invalid JSON: {e}"}
 
-    # Validate JSON
-    try:
-        slides_data = json.loads(slides_json)
-    except json.JSONDecodeError as e:
-        return {"status": "error", "message": f"Invalid JSON: {e}"}
+        output = Path(output_path).expanduser().resolve()
+        output.parent.mkdir(parents=True, exist_ok=True)
 
-    output = Path(output_path).expanduser().resolve()
-    output.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+            json.dump(slides_data, tmp, indent=2)
+            tmp_path = tmp.name
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
-        json.dump(slides_data, tmp, indent=2)
-        tmp_path = tmp.name
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, str(_SLIDES_SCRIPT), tmp_path, str(output), "--auto-fit-headings",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=str(_SLIDES_SCRIPT.parent),
+            )
+            stdout_bytes, stderr_bytes = await proc.communicate()
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
 
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            sys.executable, str(_SLIDES_SCRIPT), tmp_path, str(output), "--auto-fit-headings",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(_SLIDES_SCRIPT.parent),
-        )
-        stdout_bytes, stderr_bytes = await proc.communicate()
-    finally:
-        Path(tmp_path).unlink(missing_ok=True)
-
-    if proc.returncode == 0:
-        return {
-            "status": "success",
-            "output_path": str(output),
-            "logs": stdout_bytes.decode(),
-        }
-    else:
-        return {
-            "status": "error",
-            "logs": stdout_bytes.decode(),
-            "stderr": stderr_bytes.decode(),
-            "message": "Generation failed. Review logs and fix the slide spec, then try again.",
-        }
+        if proc.returncode == 0:
+            return {
+                "status": "success",
+                "output_path": str(output),
+                "logs": stdout_bytes.decode(),
+            }
+        else:
+            return {
+                "status": "error",
+                "logs": stdout_bytes.decode(),
+                "stderr": stderr_bytes.decode(),
+                "message": "Generation failed. Review logs and fix the slide spec, then try again.",
+            }
 
 
 # =============================================================================
