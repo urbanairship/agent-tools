@@ -38,6 +38,7 @@ OAuth token endpoint:           oauth2.asnapius.com  /  oauth2.asnapieu.com
 
 import base64
 import os
+import sys
 from typing import Literal, Optional
 import httpx
 
@@ -256,7 +257,8 @@ def validate_credentials() -> bool:
         print(
             "Airship credentials not configured. "
             "Set AIRSHIP_CLIENT_ID + AIRSHIP_CLIENT_SECRET (recommended), "
-            "AIRSHIP_BEARER_TOKEN, or both AIRSHIP_APP_KEY and AIRSHIP_MASTER_SECRET."
+            "AIRSHIP_BEARER_TOKEN, or both AIRSHIP_APP_KEY and AIRSHIP_MASTER_SECRET.",
+            file=sys.stderr,
         )
         return False
     return True

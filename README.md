@@ -54,12 +54,15 @@ Add to your assistant's MCP config file:
       ],
       "env": {
         "AIRSHIP_APP_KEY": "your_app_key",
-        "AIRSHIP_MASTER_SECRET": "your_master_secret"
+        "AIRSHIP_BEARER_TOKEN": "your_bearer_token",
+        "AIRSHIP_REGION": "us"
       }
     }
   }
 }
 ```
+
+Replace `your_bearer_token` with your bearer token, or use `AIRSHIP_MASTER_SECRET` instead if you don't have one.
 
 ### Config file locations by assistant
 
@@ -74,7 +77,7 @@ Add to your assistant's MCP config file:
 
 ```bash
 cd /path/to/agent-tools
-AIRSHIP_APP_KEY=your_key AIRSHIP_MASTER_SECRET=your_secret uv run airship-mcp
+AIRSHIP_APP_KEY=your_key AIRSHIP_BEARER_TOKEN=your_token AIRSHIP_REGION=us uv run airship-mcp
 ```
 
 ---
@@ -132,8 +135,23 @@ Or use the MCP server's `install_skills` tool to install them interactively once
 
 The extension bundles the MCP server and skills into a single file for one-click installation.
 
-1. Double-click `airship-mcp-1.0.0.mcpb`, or drag it into **Claude Desktop -> Settings -> Extensions**.
-2. Enter your Airship App Key and Master Secret when prompted.
+1. Double-click `airship-mcp.mcpb`, or drag it into **Claude Desktop -> Settings -> Extensions**.
+2. Enter your credentials when prompted. Provide your App Key and either a Bearer Token (recommended) or Master Secret.
+
+---
+
+## Keeping up to date
+
+How you update depends on how you installed:
+
+| Installation method | How to update |
+|---|---|
+| Git clone + MCP config (any client) | `git pull` in the repo directory, then restart your client |
+| Claude Code plugin (marketplace) | Claude Code checks at startup and notifies you — run `/reload-plugins` to apply |
+| Claude Desktop extension (`.mcpb`) | Download the latest `.mcpb` from the releases page and reinstall |
+| Skills only | `git pull`, then copy updated skill files into your assistant's skills/rules directory |
+
+For git-based installs, `uv` automatically picks up dependency updates on the next run — no manual reinstall needed.
 
 ---
 

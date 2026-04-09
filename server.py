@@ -132,7 +132,7 @@ async def lifespan(app):
         try:
             await api_tools.init_oauth()
         except Exception as e:
-            print(f"OAuth initialization failed: {e}")
+            print(f"OAuth initialization failed: {e}", file=sys.stderr)
             raise
     yield
     await api_tools.cleanup()
@@ -199,6 +199,7 @@ mcp = FastMCP(
     version="1.0.0",
     lifespan=lifespan,
 )
+
 
 mcp.add_middleware(ErrorHandlingMiddleware(
     include_traceback=False,
@@ -908,6 +909,25 @@ def get_troubleshooting(topic: str) -> str:
 
 
 # =============================================================================
+# Skill Resources (AI-readable reference content)
+# =============================================================================
+
+@mcp.resource("airship://skills/{skill_name}")
+def get_skill_content(skill_name: str) -> str:
+    """Load a skill's full reference content by name. Available for all bundled skills."""
+    skill_dirs = [SKILLS_DIR]
+    if _INTERNAL_SKILLS_DIR.exists():
+        skill_dirs.append(_INTERNAL_SKILLS_DIR)
+    for base in skill_dirs:
+        for name, path in _iter_skill_dirs(base):
+            if name == skill_name:
+                skill_md = path / "SKILL.md"
+                if skill_md.exists():
+                    return skill_md.read_text()
+    return f"Skill not found: {skill_name}"
+
+
+# =============================================================================
 # Skill Prompts (Claude Desktop access to skills)
 # =============================================================================
 
@@ -930,6 +950,11 @@ def _register_skill_prompts():
             except OSError:
                 continue
 
+            # Use PROMPT.md as the connector content if present (shorter stub for Claude Desktop).
+            # Falls back to SKILL.md so Claude Code plugin behavior is unchanged.
+            prompt_path = skill_path / "PROMPT.md"
+            prompt_content = prompt_path.read_text() if prompt_path.exists() else skill_content
+
             # Extract description from frontmatter
             description = f"Airship skill: {skill_name}"
             for line in skill_content.splitlines():
@@ -942,7 +967,7 @@ def _register_skill_prompts():
                     return content
                 return prompt_fn
 
-            mcp.prompt(make_prompt_fn(skill_content), name=skill_name, description=description)
+            mcp.prompt(make_prompt_fn(prompt_content), name=skill_name, description=description)
 
 _register_skill_prompts()
 
@@ -1111,7 +1136,7 @@ def _try_mount_xcode_mcp():
         _build_tools_status.ios_tool_prefix = "xcode"
         return True
     except Exception as e:
-        print(f"Note: XcodeBuildMCP not mounted: {e}")
+        print(f"Note: XcodeBuildMCP not mounted: {e}", file=sys.stderr)
         return False
 
 
@@ -1858,19 +1883,49 @@ Run verify_build(project_path='{project_path}')
 
 if _INTERNAL_SKILLS_DIR.exists():
     _SLIDES_SCRIPT = _INTERNAL_SKILLS_DIR / "slides" / "scripts" / "generate.py"
+    _SLIDES_SKILL_DIR = _INTERNAL_SKILLS_DIR / "slides"
+
+    @mcp.resource("airship://skills/slides/layout-map")
+    def get_slides_layout_map() -> str:
+        """Detailed layout placeholder structure for all 28 slide layouts."""
+        ref_path = _SLIDES_SKILL_DIR / "references" / "layout-map.md"
+        if ref_path.exists():
+            return ref_path.read_text()
+        return "Layout map not found."
+
+    @mcp.resource("airship://skills/slides/branding")
+    def get_slides_branding() -> str:
+        """Airship brand guidelines: fonts, colors, and typography rules for slides."""
+        ref_path = _SLIDES_SKILL_DIR / "references" / "branding.md"
+        if ref_path.exists():
+            return ref_path.read_text()
+        return "Branding reference not found."
+
+    @mcp.tool
+    def get_slides_reference() -> str:
+        """
+        Get the full Airship slides reference - layouts, JSON schema, brand rules, and content guidelines.
+
+        ALWAYS call this before calling generate_slides. It returns everything you need to build
+        a valid slides_json spec: all layout names, required fields per layout, asset paths,
+        character limits, and brand rules.
+        """
+        skill_path = _SLIDES_SKILL_DIR / "SKILL.md"
+        if skill_path.exists():
+            return skill_path.read_text()
+        return "Slides reference not found."
 
     @mcp.tool
     async def generate_slides(ctx: Context, slides_json: str, output_path: str) -> Dict[str, Any]:
         """
         Generate a branded Airship presentation (.pptx) from a JSON slide spec.
 
-        IMPORTANT: Before building the slides_json, invoke the MCP prompt named "slides" to load
-        the full layout reference, brand rules, and JSON schema. Do not guess at layouts or field
-        names — read the skill first, then build the spec.
+        IMPORTANT: Call get_slides_reference() first to load the full layout reference, brand rules,
+        and JSON schema. Do not guess at layout names or field names.
 
         Args:
             slides_json: JSON string with a "slides" array. Each slide requires a "layout" field
-                         plus layout-specific fields. Full schema is in the "slides" MCP prompt.
+                         plus layout-specific fields. Full schema is in get_slides_reference().
             output_path: Absolute path where the .pptx file should be saved (e.g. ~/Desktop/deck.pptx).
         """
         if not _SLIDES_SCRIPT.exists():

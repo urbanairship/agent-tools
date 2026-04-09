@@ -23,8 +23,9 @@
       "env": {
         "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
         "AIRSHIP_APP_KEY": "${user_config.app_key}",
+        "AIRSHIP_BEARER_TOKEN": "${user_config.bearer_token}",
         "AIRSHIP_MASTER_SECRET": "${user_config.master_secret}",
-        "AIRSHIP_API_URL": "${user_config.api_url}"
+        "AIRSHIP_REGION": "${user_config.region}"
       }
     }
   },
@@ -36,21 +37,30 @@
       "required": true,
       "sensitive": true
     },
+    "bearer_token": {
+      "type": "string",
+      "title": "Bearer Token",
+      "description": "Recommended. From go.airship.com > Settings > APIs & Integrations. Provide this or Master Secret (or both).",
+      "required": false,
+      "sensitive": true
+    },
     "master_secret": {
       "type": "string",
       "title": "Master Secret",
-      "description": "Your Airship master secret",
-      "required": true,
+      "description": "Your Airship master secret. Required for some endpoints. Provide this or Bearer Token (or both).",
+      "required": false,
       "sensitive": true
     },
-    "api_url": {
+    "region": {
       "type": "string",
-      "title": "API URL",
-      "description": "Airship API base URL",
+      "title": "Region",
+      "description": "Your Airship region: us or eu",
       "required": false,
-      "default": "https://go.urbanairship.com"
+      "default": "us"
     }
   },
+  "prompts_generated": true,
+  "tools_generated": true,
   "tools": [
     { "name": "start", "description": "Main router for Airship SDK tasks" },
     { "name": "send_push_to_tag", "description": "Send push notification to a tag" },

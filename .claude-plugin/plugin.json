@@ -14,8 +14,8 @@
   ],
   "mcpServers": {
     "airship-mcp": {
-      "command": "uvx",
-      "args": ["airship-mcp"],
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "airship-mcp"],
       "env": {
         "AIRSHIP_REGION": "${AIRSHIP_REGION:-us}",
         "AIRSHIP_CLIENT_ID": "${AIRSHIP_CLIENT_ID:-}",
