@@ -1,0 +1,15 @@
+{
+  "name": "airship",
+  "owner": { "name": "Airship" },
+  "metadata": {
+    "description": "Airship SDK tools — push notifications, channels, migrations, RTDS, and wallet."
+  },
+  "plugins": [
+    {
+      "name": "airship",
+      "source": "./",
+      "version": "1.0.0",
+      "description": "Airship SDK tools — push notifications, channels, migrations, RTDS, and wallet."
+    }
+  ]
+}
