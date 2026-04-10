@@ -127,13 +127,12 @@ async def _fetch_skills(ctx=None) -> Dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app):
-    """Server lifespan: initialize OAuth on startup; clean up clients on shutdown."""
-    if os.environ.get("AIRSHIP_CLIENT_ID"):
-        try:
-            await api_tools.init_oauth()
-        except Exception as e:
-            print(f"OAuth initialization failed: {e}", file=sys.stderr)
-            raise
+    """Server lifespan: initialize OAuth on startup; clean up on shutdown."""
+    try:
+        await api_tools.init_oauth()
+    except Exception as e:
+        print(f"OAuth initialization failed: {e}", file=sys.stderr)
+        raise
     yield
     await api_tools.cleanup()
 
@@ -186,8 +185,10 @@ mcp = FastMCP(
 
     **Required for Push API tools:**
     - `AIRSHIP_APP_KEY` - Your Airship app key
-    - `AIRSHIP_MASTER_SECRET` - Your master secret
-    - `AIRSHIP_API_URL` - Optional, defaults to https://go.urbanairship.com
+    - `AIRSHIP_CLIENT_ID` - OAuth client ID (from your project Settings > OAuth in the Airship dashboard)
+    - `AIRSHIP_CLIENT_SECRET` - OAuth client secret
+    - `AIRSHIP_REGION` - Optional, "us" (default) or "eu"
+    - `AIRSHIP_API_URL` - Optional, overrides Go API base URL (staging/proxy environments)
 
     **Optional integrations:**
     - `AIRSHIP_MCP_MOUNT_XCODE=true` - Mount XcodeBuildMCP for iOS simulator

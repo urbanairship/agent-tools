@@ -2,14 +2,13 @@
 Tools for Airship API operations.
 All tools that perform API operations (non-informational).
 
-Auth initialization paths (in priority order):
-  1. OAuth 2.0 — call ``init_oauth()`` at server startup when AIRSHIP_CLIENT_ID is set.
-                 Fetches a JWT and stores it as a Bearer token; uses api.asnapius.com hostname.
-  2. Bearer Token — ``init_auth()`` picks this up automatically from AIRSHIP_BEARER_TOKEN.
-  3. Basic Auth — ``init_auth()`` falls back to AIRSHIP_APP_KEY + AIRSHIP_MASTER_SECRET.
+Auth: OAuth 2.0 client credentials only.
+Call ``init_oauth()`` once at server startup. It fetches a JWT from the Airship
+OAuth token endpoint, creates the HTTP client, and starts a background task that
+proactively refreshes the token before it expires.
 
-IMPORTANT: The httpx.AsyncClient is created lazily and persists for the server lifetime.
-When the MCP server shuts down, call cleanup() to properly close the client.
+The httpx.AsyncClient persists for the server lifetime.
+Call cleanup() on shutdown to close the client and cancel the refresh task.
 """
 
 # =============================================================================
@@ -44,102 +43,131 @@ When the MCP server shuts down, call cleanup() to properly close the client.
 # added incrementally based on usage patterns.
 # =============================================================================
 
+import asyncio
 import os
+import sys
 import httpx
 from typing import Dict, Any, Optional
 from pydantic import ValidationError
-from .auth import AirshipAuth, validate_credentials
+from .auth import AirshipAuth
 from .validators import PushToTagPayload, PushToChannelPayload, MessageCenterPayload, transform_validation_error
 from .errors import transform_api_error
 
 
-# Global auth and clients (initialized lazily).
-#
-# Two clients are maintained to ensure the correct auth method is used
-# regardless of which credentials are configured:
-#
-#   client       — preferred auth (Bearer if available, Basic otherwise).
-#                  Use this for all endpoints that accept both.
-#
-#   basic_client — always Basic Auth. Use this ONLY for endpoints that
-#                  explicitly require it (e.g. message deletion, Connect
-#                  compliance events). Will be None if Basic Auth credentials
-#                  are not configured; callers must handle that case.
+# Globals — populated by init_oauth() at server startup.
 auth: Optional[AirshipAuth] = None
 client: Optional[httpx.AsyncClient] = None
-basic_client: Optional[httpx.AsyncClient] = None
+_refresh_task: Optional[asyncio.Task] = None
+
+# Refresh this many seconds before the token expires.
+_REFRESH_BUFFER_SECONDS = 300
+# Minimum sleep between refresh attempts regardless of TTL.
+_REFRESH_MIN_SLEEP_SECONDS = 60.0
+# Sleep interval when token expiry is unknown.
+_REFRESH_UNKNOWN_INTERVAL_SECONDS = 1800.0
 
 
-def init_auth():
-    """Initialize authentication when first needed."""
-    global auth, client, basic_client
-    if auth is None:
-        if not validate_credentials():
-            raise ValueError(
-                "Airship credentials not configured. "
-                "Use the 'get_setup_instructions' tool for setup help. "
-                "Set AIRSHIP_BEARER_TOKEN (preferred) or both AIRSHIP_APP_KEY and "
-                "AIRSHIP_MASTER_SECRET in your MCP configuration."
+async def _token_refresh_loop() -> None:
+    """Background task: proactively refresh the OAuth token before it expires.
+
+    Sleeps until _REFRESH_BUFFER_SECONDS before the token expires, then fetches
+    a new token and swaps the HTTP client. On failure, retries after an
+    increasing back-off until successful, then resumes normal scheduling.
+    """
+    global client
+    retry_delay = _REFRESH_MIN_SLEEP_SECONDS
+
+    while True:
+        # Determine how long to sleep before the next refresh attempt.
+        ttl = auth.seconds_until_expiry() if auth else None
+        if ttl is None:
+            sleep_for = _REFRESH_UNKNOWN_INTERVAL_SECONDS
+        else:
+            # Clamp to a minimum to avoid busy-looping when TTL is very short.
+            sleep_for = max(_REFRESH_MIN_SLEEP_SECONDS, ttl - _REFRESH_BUFFER_SECONDS)
+
+        await asyncio.sleep(sleep_for)
+
+        try:
+            await auth.fetch_oauth_token()
+            # Headers are baked into the client at construction time, so
+            # build the new client before swapping to minimise the window
+            # where requests could observe a closed connection.
+            new_client = auth.create_client(api="go")
+            old_client, client = client, new_client
+            if old_client is not None:
+                await old_client.aclose()
+            print("OAuth token refreshed.", file=sys.stderr)
+            retry_delay = _REFRESH_MIN_SLEEP_SECONDS  # reset on success
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            print(
+                f"OAuth token refresh failed: {exc}. "
+                f"Retrying in {retry_delay:.0f}s.",
+                file=sys.stderr,
             )
-        auth = AirshipAuth()
-        client = auth.create_client(api="go")
-
-        # Provision the basic_client if Basic Auth credentials are available.
-        # This is required for endpoints that do not accept Bearer tokens.
-        if auth.app_key and auth.master_secret:
-            basic_client = auth.create_client(api="go", force_basic=True)
-
-        if not auth.using_bearer:
-            import warnings
-            warnings.warn(
-                "Authenticating with Basic Auth (app key + master secret). "
-                "Set AIRSHIP_BEARER_TOKEN for the preferred auth method.",
-                stacklevel=2,
-            )
+            await asyncio.sleep(retry_delay)
+            # Exponential back-off up to 10 minutes.
+            retry_delay = min(retry_delay * 2, 600.0)
 
 
 async def init_oauth() -> None:
-    """Initialize authentication using OAuth 2.0 client credentials.
+    """Initialize OAuth 2.0 authentication and start the background refresh task.
 
-    Fetches a JWT from the Airship OAuth token endpoint and stores it as the
-    Bearer token so all existing code paths carry it through automatically.
-    Creates the main ``client`` pointed at the OAuth-specific Go API hostname.
-
-    Should be called once at server startup when AIRSHIP_CLIENT_ID is set.
+    Creates an AirshipAuth instance, fetches the initial JWT, builds the HTTP
+    client, and launches a background task that refreshes the token before it
+    expires. Idempotent: cleans up any prior state before reinitialising.
+    Raises on any failure so the server fails fast at startup.
     """
-    global auth, client, basic_client
-    if auth is None:
-        auth = AirshipAuth()
+    global auth, client, _refresh_task
 
-    token = await auth.fetch_oauth_token()
-    auth.bearer_token = token
-    auth.using_oauth = True
+    # Cancel any existing refresh task before reinitialising.
+    if _refresh_task is not None:
+        _refresh_task.cancel()
+        try:
+            await _refresh_task
+        except asyncio.CancelledError:
+            pass
+        _refresh_task = None
 
-    # Re-create the client targeting the OAuth Go API hostname.
-    if client is not None:
-        await client.aclose()
-    client = auth.create_client(api="go", oauth_token=True)
-
-    # Provision basic_client if Basic Auth creds are also available.
-    if auth.app_key and auth.master_secret and basic_client is None:
-        basic_client = auth.create_client(api="go", force_basic=True)
+    auth = AirshipAuth()
+    await auth.fetch_oauth_token()
+    client = auth.create_client(api="go")
+    _refresh_task = asyncio.create_task(_token_refresh_loop())
 
 
-async def cleanup():
-    """
-    Clean up resources (close HTTP clients).
-    Should be called when MCP server shuts down.
-    """
-    global client, basic_client
+async def cleanup() -> None:
+    """Clean up resources. Call when the MCP server shuts down."""
+    global auth, client, _refresh_task
+    if _refresh_task is not None:
+        _refresh_task.cancel()
+        try:
+            await _refresh_task
+        except asyncio.CancelledError:
+            pass
+        _refresh_task = None
     if client is not None:
         await client.aclose()
         client = None
-    if basic_client is not None:
-        await basic_client.aclose()
-        basic_client = None
+    auth = None
+
+
+def _not_ready() -> Dict[str, Any]:
+    """Standard error response when OAuth was not initialized at startup."""
+    return {
+        "status": "error",
+        "message": "Server not initialized. Check logs - OAuth setup likely failed at startup.",
+    }
 
 
 # Helper functions for API calls
+#
+# NOTE: Segment endpoints (/api/segments) are not covered by any OAuth 2.0
+# scope in the Airship API auth reference.  These tools may return 403 when
+# authenticating via OAuth.  See:
+# https://docs.airship.com/reference/integration/api-auth-reference/
+
 async def _create_segment(name: str, criteria: Dict[str, Any]) -> Dict[str, Any]:
     """Create audience segment via Airship API."""
 
@@ -185,11 +213,8 @@ async def create_segment(
         criteria: Segment criteria definition
     """
 
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     # Create segment
     result = await _create_segment(name, criteria)
@@ -211,11 +236,8 @@ async def delete_segment(
         segment_id: ID of segment to delete
     """
 
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     # Get segment details first
     segment = await _get_segment(segment_id)
@@ -250,11 +272,8 @@ async def lookup_channel(channel_id: str) -> Dict[str, Any]:
     Returns:
         Dictionary with channel information or error status
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     try:
         response = await client.get(f"/api/channels/{channel_id}")
@@ -298,11 +317,8 @@ async def get_channel_tags(channel_id: str) -> Dict[str, Any]:
     Returns:
         Dictionary with list of tags or error status
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     try:
         response = await client.get(f"/api/channels/{channel_id}/tags")
@@ -341,11 +357,8 @@ async def get_channel_attributes(channel_id: str) -> Dict[str, Any]:
     Returns:
         Dictionary with attributes or error status
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     try:
         response = await client.get(f"/api/channels/{channel_id}/attributes")
@@ -381,11 +394,8 @@ async def list_segments() -> Dict[str, Any]:
     Returns:
         Dictionary with array of segments or error status
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     try:
         response = await client.get("/api/segments")
@@ -426,11 +436,8 @@ async def get_segment_info(segment_id: str) -> Dict[str, Any]:
     Returns:
         Dictionary with segment details including criteria or error status
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     try:
         segment = await _get_segment(segment_id)
@@ -467,11 +474,8 @@ async def lookup_named_user(named_user_id: str) -> Dict[str, Any]:
     Returns:
         Dictionary with named user information and channels or error status
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}
+    if client is None:
+        return _not_ready()
 
     try:
         response = await client.get("/api/named_users", params={"id": named_user_id})
@@ -538,15 +542,8 @@ async def send_custom_push(
     examples for all audience types, actions, and special features.
     """
 
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {
-            "status": "error",
-            "error": "credentials_not_configured",
-            "message": "AIRSHIP_APP_KEY and AIRSHIP_MASTER_SECRET must be set in MCP server environment configuration"
-        }
+    if client is None:
+        return _not_ready()
 
     audience = payload.get("audience")
     if audience == "all" or audience == {"all": True}:
@@ -565,7 +562,7 @@ async def send_custom_push(
 
         return {
             "status": "sent",
-            "app_key": auth.app_key or "(bearer token — app key not configured)",
+            "app_key": auth.app_key,
             "base_url": str(client.base_url),
             "payload": payload,
             "push_ids": push_ids,
@@ -574,19 +571,19 @@ async def send_custom_push(
     except httpx.HTTPStatusError as e:
         # Use centralized error transformation
         error_response = transform_api_error(e, payload)
-        error_response["app_key"] = auth.app_key or "(bearer token — app key not configured)"
+        error_response["app_key"] = auth.app_key
 
         # Add extra debug info for 401 errors
         if e.response.status_code == 401:
             error_response["base_url"] = str(client.base_url)
-            error_response["auth_method"] = "bearer" if auth.using_bearer else "basic"
+            error_response["auth_method"] = "oauth"
 
         return error_response
     except Exception as e:
         return {
             "status": "error",
             "error": "unexpected_error",
-            "app_key": (auth.app_key if auth else None) or "unknown",
+            "app_key": auth.app_key if auth else "unknown",
             "message": str(e),
             "payload": payload
         }
@@ -835,16 +832,8 @@ async def validate_push_payload(
             "notification": {"alert": "Test"}
         })
     """
-    # Initialize auth if needed
-    try:
-        init_auth()
-    except ValueError as e:
-        return {
-            "status": "error",
-            "test_mode": True,
-            "error": "credentials_not_configured",
-            "message": str(e)
-        }
+    if client is None:
+        return {**_not_ready(), "test_mode": True}
 
     try:
         response = await client.post("/api/push/validate", json=payload)

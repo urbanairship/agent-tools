@@ -54,7 +54,8 @@ Add to your assistant's MCP config file:
       ],
       "env": {
         "AIRSHIP_APP_KEY": "your_app_key",
-        "AIRSHIP_BEARER_TOKEN": "your_bearer_token",
+        "AIRSHIP_CLIENT_ID": "your_client_id",
+        "AIRSHIP_CLIENT_SECRET": "your_client_secret",
         "AIRSHIP_REGION": "us"
       }
     }
@@ -62,7 +63,7 @@ Add to your assistant's MCP config file:
 }
 ```
 
-Replace `your_bearer_token` with your bearer token, or use `AIRSHIP_MASTER_SECRET` instead if you don't have one.
+Create OAuth client credentials in the Airship dashboard: next to your project name, select the dropdown menu, then **Settings**. Under **Project settings**, select **OAuth**. Enable **Allow Basic Auth** when creating credentials to generate a Client Secret. Enable the **Push**, **Channels**, and **Named Users** scopes at minimum.
 
 ### Config file locations by assistant
 
@@ -77,7 +78,7 @@ Replace `your_bearer_token` with your bearer token, or use `AIRSHIP_MASTER_SECRE
 
 ```bash
 cd /path/to/agent-tools
-AIRSHIP_APP_KEY=your_key AIRSHIP_BEARER_TOKEN=your_token AIRSHIP_REGION=us uv run airship-mcp
+AIRSHIP_APP_KEY=your_key AIRSHIP_CLIENT_ID=your_client_id AIRSHIP_CLIENT_SECRET=your_client_secret AIRSHIP_REGION=us uv run airship-mcp
 ```
 
 ---
@@ -136,7 +137,7 @@ Or use the MCP server's `install_skills` tool to install them interactively once
 The extension bundles the MCP server and skills into a single file for one-click installation.
 
 1. Double-click `airship-mcp.mcpb`, or drag it into **Claude Desktop -> Settings -> Extensions**.
-2. Enter your credentials when prompted. Provide your App Key and either a Bearer Token (recommended) or Master Secret.
+2. Enter your credentials when prompted: App Key, OAuth Client ID, and OAuth Client Secret.
 
 ---
 

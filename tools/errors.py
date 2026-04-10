@@ -101,7 +101,7 @@ def transform_api_error(exc: httpx.HTTPStatusError, payload: dict = None) -> dic
     elif exc.response.status_code == 401:
         base["error"] = "authentication_failed"
         base["message"] = "API credentials are invalid or expired"
-        base["suggestion"] = "Check AIRSHIP_APP_KEY and AIRSHIP_MASTER_SECRET in your MCP configuration"
+        base["suggestion"] = "Check AIRSHIP_APP_KEY, AIRSHIP_CLIENT_ID, and AIRSHIP_CLIENT_SECRET in your MCP configuration"
 
     elif exc.response.status_code == 404:
         # Try to extract resource info from URL

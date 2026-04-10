@@ -23,8 +23,8 @@
       "env": {
         "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
         "AIRSHIP_APP_KEY": "${user_config.app_key}",
-        "AIRSHIP_BEARER_TOKEN": "${user_config.bearer_token}",
-        "AIRSHIP_MASTER_SECRET": "${user_config.master_secret}",
+        "AIRSHIP_CLIENT_ID": "${user_config.client_id}",
+        "AIRSHIP_CLIENT_SECRET": "${user_config.client_secret}",
         "AIRSHIP_REGION": "${user_config.region}"
       }
     }
@@ -37,18 +37,18 @@
       "required": true,
       "sensitive": true
     },
-    "bearer_token": {
+    "client_id": {
       "type": "string",
-      "title": "Bearer Token",
-      "description": "Recommended. From go.airship.com > Settings > APIs & Integrations. Provide this or Master Secret (or both).",
-      "required": false,
-      "sensitive": true
+      "title": "OAuth Client ID",
+      "description": "From your project Settings > OAuth in the Airship dashboard.",
+      "required": true,
+      "sensitive": false
     },
-    "master_secret": {
+    "client_secret": {
       "type": "string",
-      "title": "Master Secret",
-      "description": "Your Airship master secret. Required for some endpoints. Provide this or Bearer Token (or both).",
-      "required": false,
+      "title": "OAuth Client Secret",
+      "description": "Paired with your Client ID. Enable 'Allow Basic Auth' when creating credentials to generate this.",
+      "required": true,
       "sensitive": true
     },
     "region": {
