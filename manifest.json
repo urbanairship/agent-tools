@@ -1,5 +1,5 @@
 {
-  "manifest_version": "0.3",
+  "manifest_version": "0.4",
   "name": "airship-mcp",
   "display_name": "Airship MCP",
   "version": "1.0.0",
@@ -12,16 +12,18 @@
   "license": "Apache-2.0",
   "keywords": ["airship", "push", "mobile", "sdk", "api", "notifications"],
   "compatibility": {
-    "platforms": ["darwin", "win32", "linux"]
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.10"
+    }
   },
   "server": {
-    "type": "python",
+    "type": "uv",
     "entry_point": "server.py",
     "mcp_config": {
       "command": "uv",
       "args": ["run", "--directory", "${__dirname}", "airship-mcp"],
       "env": {
-        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
         "AIRSHIP_APP_KEY": "${user_config.app_key}",
         "AIRSHIP_CLIENT_ID": "${user_config.client_id}",
         "AIRSHIP_CLIENT_SECRET": "${user_config.client_secret}",
@@ -35,7 +37,7 @@
       "title": "App Key",
       "description": "Your Airship application key",
       "required": true,
-      "sensitive": true
+      "sensitive": false
     },
     "client_id": {
       "type": "string",
@@ -79,6 +81,8 @@
     { "name": "check_build_tools", "description": "Check available iOS/Android build tools" },
     { "name": "verify_build", "description": "Build and verify an iOS or Android project" },
     { "name": "start_migration", "description": "Start an interactive SDK migration wizard" },
-    { "name": "migrate_sdk", "description": "Run an SDK migration for a specific version range" }
+    { "name": "migrate_sdk", "description": "Run an SDK migration for a specific version range" },
+    { "name": "install_skills", "description": "Install Airship skill files into a project" },
+    { "name": "update_skills", "description": "Download or update Airship skills from GitHub" }
   ]
 }

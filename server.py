@@ -147,7 +147,6 @@ mcp = FastMCP(
     Choose the right tool based on user intent:
     - "migrate", "upgrade SDK", "update SDK" → `start_migration()`
     - "send push", "notification" → `send_push_to_tag()` or `send_push_to_channel()`
-    - "create presentation", "slide deck", "slides" → `start()` (routes to airship-slides skill)
     - "lookup channel", "find device" → `lookup_channel()`
     - "build", "verify" → `verify_build()`
     - unclear/generic request → `start()`
@@ -232,7 +231,6 @@ async def start(ctx: Context) -> Dict[str, Any]:
     capabilities = [
         "Implement a Feature",
         "Send Push Notification",
-        "Create Presentation",
         "Migrate SDK Version",
         "Lookup Channel/User",
         "Install Skills",
@@ -265,11 +263,6 @@ async def start(ctx: Context) -> Dict[str, Any]:
                     "description": "Send push notifications to tags, channels, or named users",
                     "tools": ["send_push_to_tag", "send_push_to_channel", "send_custom_push", "send_message_center_message"],
                 },
-                "create_presentation": {
-                    "description": "Generate branded Airship presentations as editable PPTX files",
-                    "skill": "/airship-slides",
-                    "usage": "Type /airship-slides in chat or ask to create a presentation",
-                },
                 "migration": {
                     "description": "Guided SDK version migration with rollback instructions",
                     "tools": ["start_migration", "migrate_sdk"],
@@ -291,7 +284,7 @@ async def start(ctx: Context) -> Dict[str, Any]:
             "skills_info": {
                 "location": "agent-tools (https://github.com/urbanairship/agent-tools)",
                 "invocation": "Type /<skill-name> in chat or let the agent auto-select based on context",
-                "available": ["push", "message-center", "migration", "airship-custom-views", "airship-docs", "airship-slides"],
+                "available": ["push", "message-center", "migration", "airship-custom-views", "airship-docs"],
             },
             "hint": "Call any tool directly, e.g., send_push_to_tag(tag='test', alert='Hello!')",
         }
@@ -301,8 +294,6 @@ async def start(ctx: Context) -> Dict[str, Any]:
         return await _start_feature_flow(ctx)
     elif choice == "Send Push Notification":
         return await _start_push_flow(ctx)
-    elif choice == "Create Presentation":
-        return _start_slides_flow()
     elif choice == "Migrate SDK Version":
         return await _start_migration_flow(ctx)
     elif choice == "Lookup Channel/User":
@@ -547,11 +538,6 @@ def _get_skills_info() -> Dict[str, Any]:
                 "invoke": "/airship-docs",
                 "includes": ["API specs", "Setup guides", "Troubleshooting"],
             },
-            "airship-slides": {
-                "description": "Generate branded Airship presentations (PPTX)",
-                "invoke": "/airship-slides",
-                "includes": ["28 brand layouts", "Icon/photo assets", "Auto-remediation"],
-            },
         },
         "how_to_use": {
             "option_1": "Type /<skill-name> in chat (e.g., /push)",
@@ -640,21 +626,6 @@ async def _start_docs_flow(ctx: Context) -> Dict[str, Any]:
     }
 
 
-def _start_slides_flow() -> Dict[str, Any]:
-    """Direct user to the airship-slides skill for presentation generation."""
-    return {
-        "status": "use_skill",
-        "skill": "airship-slides",
-        "instructions": {
-            "step_1": "Type /airship-slides in chat to start the presentation workflow",
-            "step_2": "Describe the presentation topic, audience, and key messages",
-            "step_3": "The skill generates a branded PPTX using the Airship master template",
-        },
-        "prerequisites": "Python 3 with python-pptx installed (pip3 install python-pptx)",
-        "output": "Fully editable PPTX file compatible with PowerPoint, Google Slides, and Keynote",
-    }
-
-
 async def _start_install_skills_flow(ctx: Context) -> Dict[str, Any]:
     """Install Airship skills into a project directory for use with Cursor, Windsurf, or any AI assistant that supports skill files."""
     from fastmcp.server.elicitation import AcceptedElicitation, DeclinedElicitation, CancelledElicitation
@@ -720,7 +691,6 @@ async def _start_install_skills_flow(ctx: Context) -> Dict[str, Any]:
         "Implement Custom Views",
         "Set Up Push Notifications",
         "Set Up Message Center",
-        "Create Presentation",
         "Migrate SDK Version",
         "Done",
     ]
@@ -743,7 +713,7 @@ async def _start_install_skills_flow(ctx: Context) -> Dict[str, Any]:
         "project_path": str(project),
         "cursor_skills_path": str(cursor_skills),
         "usage": {
-            "instructions": "Type /<skill-name> in your AI assistant's chat (e.g., /airship-custom-views, /push, /airship-slides).",
+            "instructions": "Type /<skill-name> in your AI assistant's chat (e.g., /airship-custom-views, /push).",
             "available_skills": installed,
         },
     }
@@ -764,11 +734,6 @@ async def _start_install_skills_flow(ctx: Context) -> Dict[str, Any]:
             "skill": "message-center",
             "instruction": "Type /message-center in chat to start Message Center setup.",
         }
-    elif next_choice == "Create Presentation":
-        response["next_action"] = {
-            "skill": "airship-slides",
-            "instruction": "Type /airship-slides in chat to create a branded presentation.",
-        }
     elif next_choice == "Migrate SDK Version":
         return await _start_migration_flow(ctx)
     else:
@@ -787,7 +752,6 @@ async def install_skills(ctx: Context, project_path: str) -> Dict[str, Any]:
     - push: Set up push notifications
     - message-center: Implement Message Center (inbox)
     - migration: Upgrade SDK versions
-    - airship-slides: Generate branded Airship presentations (PPTX)
 
     Args:
         project_path: Path to the project directory
@@ -1879,99 +1843,16 @@ Run verify_build(project_path='{project_path}')
 
 
 # =============================================================================
-# Internal-only Tools (registered only when internal skills dir is present)
+# Internal-only Tools (loaded dynamically from internal/register_tools.py)
 # =============================================================================
 
-if _INTERNAL_SKILLS_DIR.exists():
-    _SLIDES_SCRIPT = _INTERNAL_SKILLS_DIR / "slides" / "scripts" / "generate.py"
-    _SLIDES_SKILL_DIR = _INTERNAL_SKILLS_DIR / "slides"
-
-    @mcp.resource("airship://skills/slides/layout-map")
-    def get_slides_layout_map() -> str:
-        """Detailed layout placeholder structure for all 28 slide layouts."""
-        ref_path = _SLIDES_SKILL_DIR / "references" / "layout-map.md"
-        if ref_path.exists():
-            return ref_path.read_text()
-        return "Layout map not found."
-
-    @mcp.resource("airship://skills/slides/branding")
-    def get_slides_branding() -> str:
-        """Airship brand guidelines: fonts, colors, and typography rules for slides."""
-        ref_path = _SLIDES_SKILL_DIR / "references" / "branding.md"
-        if ref_path.exists():
-            return ref_path.read_text()
-        return "Branding reference not found."
-
-    @mcp.tool
-    def get_slides_reference() -> str:
-        """
-        Get the full Airship slides reference - layouts, JSON schema, brand rules, and content guidelines.
-
-        ALWAYS call this before calling generate_slides. It returns everything you need to build
-        a valid slides_json spec: all layout names, required fields per layout, asset paths,
-        character limits, and brand rules.
-        """
-        skill_path = _SLIDES_SKILL_DIR / "SKILL.md"
-        if skill_path.exists():
-            return skill_path.read_text()
-        return "Slides reference not found."
-
-    @mcp.tool
-    async def generate_slides(ctx: Context, slides_json: str, output_path: str) -> Dict[str, Any]:
-        """
-        Generate a branded Airship presentation (.pptx) from a JSON slide spec.
-
-        IMPORTANT: Call get_slides_reference() first to load the full layout reference, brand rules,
-        and JSON schema. Do not guess at layout names or field names.
-
-        Args:
-            slides_json: JSON string with a "slides" array. Each slide requires a "layout" field
-                         plus layout-specific fields. Full schema is in get_slides_reference().
-            output_path: Absolute path where the .pptx file should be saved (e.g. ~/Desktop/deck.pptx).
-        """
-        if not _SLIDES_SCRIPT.exists():
-            return {
-                "status": "error",
-                "message": "Slides script not found. This tool requires the internal slides skill to be installed.",
-            }
-
-        # Validate JSON
-        try:
-            slides_data = json.loads(slides_json)
-        except json.JSONDecodeError as e:
-            return {"status": "error", "message": f"Invalid JSON: {e}"}
-
-        output = Path(output_path).expanduser().resolve()
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
-            json.dump(slides_data, tmp, indent=2)
-            tmp_path = tmp.name
-
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable, str(_SLIDES_SCRIPT), tmp_path, str(output), "--auto-fit-headings",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=str(_SLIDES_SCRIPT.parent),
-            )
-            stdout_bytes, stderr_bytes = await proc.communicate()
-        finally:
-            Path(tmp_path).unlink(missing_ok=True)
-
-        if proc.returncode == 0:
-            return {
-                "status": "success",
-                "output_path": str(output),
-                "logs": stdout_bytes.decode(),
-            }
-        else:
-            return {
-                "status": "error",
-                "logs": stdout_bytes.decode(),
-                "stderr": stderr_bytes.decode(),
-                "message": "Generation failed. Review logs and fix the slide spec, then try again.",
-            }
+_internal_register = _INTERNAL_SKILLS_DIR / "register_tools.py"
+if _internal_register.exists():
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location("internal_tools", _internal_register)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    _mod.register(mcp, Context)
 
 
 # =============================================================================
