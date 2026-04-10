@@ -25,16 +25,35 @@ This skill enables agents to create pipelines (automations) in Airship that auto
 
 ## Authentication
 
-- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `pln` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
-- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+| Method | Endpoint | Scope |
+|---|---|---|
+| OAuth (recommended) | `api.asnapius.com` | `pln` |
+| Bearer token | `go.urbanairship.com` | — |
+| Basic | `go.urbanairship.com` | — |
 
-> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
+See [Authentication Guide](../../AUTHENTICATION.md) for token request details and MCP setup.
 
 **Headers**:
+
+**OAuth** (`api.asnapius.com`):
 ```
-Authorization: Bearer <bearer_token> (or Basic <credentials>)
-Accept: application/vnd.urbanairship+json; version=3
+Authorization: Bearer <oauth_token>
 Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Bearer token** (`go.urbanairship.com`):
+```
+Authorization: Bearer <dashboard_token>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Basic** (`go.urbanairship.com`):
+```
+Authorization: Basic <base64(app_key:master_secret)>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
 ```
 
 ## Request Schema
@@ -279,7 +298,7 @@ Rate limiting constraints:
 {
   "ok": true,
   "operation_id": "ef625038-70a3-41f1-826f-57bc11dd625a",
-  "pipeline_urls": ["https:\/\/go.urbanairship.com/api/pipelines/4d3ff1fd-9ce6-5ea4-5dc9-5ccbd38597f4"]
+  "pipeline_urls": ["https://api.asnapius.com/api/pipelines/4d3ff1fd-9ce6-5ea4-5dc9-5ccbd38597f4"]
   // Note: pipeline_urls hostname reflects the base URL used for the request (US or EU)
 }
 ```

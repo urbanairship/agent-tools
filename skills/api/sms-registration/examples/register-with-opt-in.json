@@ -2,11 +2,11 @@
   "description": "Register an SMS phone number without opt-in (triggers double opt-in flow)",
   "request": {
     "method": "POST",
-    "url": "https://go.urbanairship.com/api/channels/sms",
+    "url": "https://{base_url}/api/channels/sms",
     "headers": {
       "Accept": "application/vnd.urbanairship+json; version=3",
       "Content-Type": "application/json",
-      "Authorization": "Bearer <token>"
+      "Authorization": "Bearer <oauth_token>",
     },
     "body": {
       "msisdn": "15558675309",
@@ -25,7 +25,7 @@
   "response": {
     "status": 201,
     "headers": {
-      "Location": "https://go.urbanairship.com/api/channels/34b3dfc1-d717-40fe-89e8-10584ed1c123"
+      "Location": "https://{base_url}/api/channels/34b3dfc1-d717-40fe-89e8-10584ed1c123"
     },
     "body": {
       "ok": true,

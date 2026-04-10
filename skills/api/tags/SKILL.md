@@ -37,10 +37,36 @@ There are two main endpoints for tag management:
 
 ### Authentication
 
-- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `nu` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
-- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+| Method | Endpoint | Scope |
+|---|---|---|
+| OAuth (recommended) | `api.asnapius.com` | `nu` |
+| Bearer token | `go.urbanairship.com` | — |
+| Basic | `go.urbanairship.com` | — |
 
-> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
+See [Authentication Guide](../../AUTHENTICATION.md) for token request details and MCP setup.
+
+### Request Headers
+
+**OAuth** (`api.asnapius.com`):
+```
+Authorization: Bearer <oauth_token>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Bearer token** (`go.urbanairship.com`):
+```
+Authorization: Bearer <dashboard_token>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Basic** (`go.urbanairship.com`):
+```
+Authorization: Basic <base64(app_key:master_secret)>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
 
 ### Request Schema
 
@@ -98,10 +124,36 @@ There are two main endpoints for tag management:
 
 ### Authentication
 
-- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `chn` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
-- **Basic Auth** (avoid in production): `Authorization: Basic <base64(app_key:master_secret)>` — master secret grants full account access
+| Method | Endpoint | Scope |
+|---|---|---|
+| OAuth (recommended) | `api.asnapius.com` | `chn` |
+| Bearer token | `go.urbanairship.com` | — |
+| Basic | `go.urbanairship.com` | — |
 
-> **MCP server**: set `AIRSHIP_BEARER_TOKEN` (Bearer) or `AIRSHIP_APP_KEY` + `AIRSHIP_MASTER_SECRET` (Basic Auth). `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
+See [Authentication Guide](../../AUTHENTICATION.md) for token request details and MCP setup.
+
+### Request Headers
+
+**OAuth** (`api.asnapius.com`):
+```
+Authorization: Bearer <oauth_token>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Bearer token** (`go.urbanairship.com`):
+```
+Authorization: Bearer <dashboard_token>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Basic** (`go.urbanairship.com`):
+```
+Authorization: Basic <base64(app_key:master_secret)>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
 
 ### Request Schema
 

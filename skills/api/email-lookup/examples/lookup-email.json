@@ -2,10 +2,10 @@
   "description": "Lookup an email channel by email address",
   "request": {
     "method": "GET",
-    "url": "https://go.urbanairship.com/api/channels/email/name%40example.com",
+    "url": "https://{base_url}/api/channels/email/name%40example.com",
     "headers": {
       "Accept": "application/vnd.urbanairship+json; version=3",
-      "Authorization": "Bearer <token>"
+      "Authorization": "Bearer <oauth_token>",
     }
   },
   "response": {

@@ -36,6 +36,8 @@ OAuth token endpoints:
 - US: `https://oauth2.asnapius.com/token`
 - EU: `https://oauth2.asnapieu.com/token`
 
+**URL-encode credentials**: When building the Basic auth header for the token request, URL-encode the client ID and secret before base64-encoding (`base64(url_encode(id) + ":" + url_encode(secret))`); raw values will fail if either contains special characters. Include `scope=wpas` and `Accept: application/json` in the token request.
+
 ### Basic Auth (fallback)
 
 If OAuth is not configured, use:

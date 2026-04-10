@@ -67,7 +67,9 @@ All sensitive values are injected via environment variables — never hardcoded.
 | Variable | Required | Description |
 |---|---|---|
 | `AIRSHIP_APP_KEY` | Yes | Your Airship project app key |
-| `AIRSHIP_MASTER_SECRET` | Yes | Your Airship master secret |
+| `AIRSHIP_MASTER_SECRET` | Yes (or OAuth) | Your Airship master secret — used for Basic auth |
+| `AIRSHIP_CLIENT_ID` | Yes (or master secret) | OAuth client ID — preferred over master secret |
+| `AIRSHIP_CLIENT_SECRET` | Yes (or master secret) | OAuth client secret |
 | `AIRSHIP_OPEN_PLATFORM_NAME` | Yes | The `open_platform_name` configured in the dashboard |
 | `AIRSHIP_VALIDATION_CODE` | Yes | The 36-character UUID from the Airship dashboard (after saving the open channel config) |
 | `AIRSHIP_WEBHOOK_SECRET` | Yes (if using Signature Hash auth) | The secret key configured in the dashboard for `X-UA-SIGNATURE` verification |
@@ -122,6 +124,8 @@ const app = express();
 const {
   AIRSHIP_APP_KEY,
   AIRSHIP_MASTER_SECRET,
+  AIRSHIP_CLIENT_ID,
+  AIRSHIP_CLIENT_SECRET,
   AIRSHIP_OPEN_PLATFORM_NAME,
   AIRSHIP_VALIDATION_CODE,
   AIRSHIP_WEBHOOK_SECRET,
@@ -129,8 +133,45 @@ const {
   PORT = '8080',
 } = process.env;
 
-const AIRSHIP_BASE_URL = 'https://go.urbanairship.com';
-const AIRSHIP_AUTH = Buffer.from(`${AIRSHIP_APP_KEY}:${AIRSHIP_MASTER_SECRET}`).toString('base64');
+const AIRSHIP_BASE_URL = 'https://api.asnapius.com'; // US; use https://api.asnapieu.com for EU
+// Basic auth — used when AIRSHIP_MASTER_SECRET is provided
+const AIRSHIP_AUTH = AIRSHIP_MASTER_SECRET
+  ? Buffer.from(`${AIRSHIP_APP_KEY}:${AIRSHIP_MASTER_SECRET}`).toString('base64')
+  : null;
+
+// OAuth token cache — used when AIRSHIP_CLIENT_ID + AIRSHIP_CLIENT_SECRET are provided
+let _tokenCache = { token: null, expiresAt: 0 };
+
+async function getOAuthToken() {
+  if (_tokenCache.token && Date.now() < _tokenCache.expiresAt) {
+    return _tokenCache.token;
+  }
+  const res = await fetch('https://oauth2.asnapius.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+    },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: AIRSHIP_CLIENT_ID,
+      client_secret: AIRSHIP_CLIENT_SECRET,
+      scope: 'chn nu',
+    }),
+  });
+  if (!res.ok) throw new Error(`OAuth token request failed: ${res.status}`);
+  const data = await res.json();
+  _tokenCache = { token: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return _tokenCache.token;
+}
+
+// Returns the Authorization header value — Bearer (OAuth) if client creds present, else Basic
+async function getAuthHeader() {
+  if (AIRSHIP_CLIENT_ID && AIRSHIP_CLIENT_SECRET) {
+    return `Bearer ${await getOAuthToken()}`;
+  }
+  return `Basic ${AIRSHIP_AUTH}`;
+}
 
 // ─── Raw body middleware ──────────────────────────────────────────────────────
 // Must read raw bytes before any parsing — needed for gzip decompression
@@ -212,7 +253,7 @@ async function registerOpenChannel({ address, optIn = true, identifiers, tags, t
   const res = await fetch(`${AIRSHIP_BASE_URL}/api/channels/open`, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${AIRSHIP_AUTH}`,
+      Authorization: await getAuthHeader(),
       'Content-Type': 'application/json',
       Accept: 'application/vnd.urbanairship+json; version=3',
     },
@@ -226,7 +267,7 @@ async function associateNamedUser(channelId, namedUserId) {
   const res = await fetch(`${AIRSHIP_BASE_URL}/api/named_users/associate`, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${AIRSHIP_AUTH}`,
+      Authorization: await getAuthHeader(),
       'Content-Type': 'application/json',
       Accept: 'application/vnd.urbanairship+json; version=3',
     },
@@ -350,7 +391,11 @@ CMD ["node", "src/index.js"]
 
 ```
 AIRSHIP_APP_KEY=your_app_key
+# Auth option 1: Basic (app key + master secret)
 AIRSHIP_MASTER_SECRET=your_master_secret
+# Auth option 2: OAuth client credentials (preferred)
+AIRSHIP_CLIENT_ID=your_oauth_client_id
+AIRSHIP_CLIENT_SECRET=your_oauth_client_secret
 AIRSHIP_OPEN_PLATFORM_NAME=whatsapp
 AIRSHIP_VALIDATION_CODE=          # fill in after step 4 below
 AIRSHIP_WEBHOOK_SECRET=           # fill in after step 4 below
@@ -403,14 +448,53 @@ import { gunzipSync } from 'zlib';
 const {
   AIRSHIP_APP_KEY,
   AIRSHIP_MASTER_SECRET,
+  AIRSHIP_CLIENT_ID,
+  AIRSHIP_CLIENT_SECRET,
   AIRSHIP_OPEN_PLATFORM_NAME,
   AIRSHIP_VALIDATION_CODE,
   AIRSHIP_WEBHOOK_SECRET,
   INBOUND_API_KEY,
 } = process.env;
 
-const AIRSHIP_BASE_URL = 'https://go.urbanairship.com';
-const AIRSHIP_AUTH = Buffer.from(`${AIRSHIP_APP_KEY}:${AIRSHIP_MASTER_SECRET}`).toString('base64');
+const AIRSHIP_BASE_URL = 'https://api.asnapius.com'; // US; use https://api.asnapieu.com for EU
+// Basic auth — used when AIRSHIP_MASTER_SECRET is provided
+const AIRSHIP_AUTH = AIRSHIP_MASTER_SECRET
+  ? Buffer.from(`${AIRSHIP_APP_KEY}:${AIRSHIP_MASTER_SECRET}`).toString('base64')
+  : null;
+
+// OAuth token cache — used when AIRSHIP_CLIENT_ID + AIRSHIP_CLIENT_SECRET are provided
+let _tokenCache = { token: null, expiresAt: 0 };
+
+async function getOAuthToken() {
+  if (_tokenCache.token && Date.now() < _tokenCache.expiresAt) {
+    return _tokenCache.token;
+  }
+  const res = await fetch('https://oauth2.asnapius.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+    },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: AIRSHIP_CLIENT_ID,
+      client_secret: AIRSHIP_CLIENT_SECRET,
+      scope: 'chn nu',
+    }),
+  });
+  if (!res.ok) throw new Error(`OAuth token request failed: ${res.status}`);
+  const data = await res.json();
+  _tokenCache = { token: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return _tokenCache.token;
+}
+
+// Returns the Authorization header value — Bearer (OAuth) if client creds present, else Basic
+async function getAuthHeader() {
+  if (AIRSHIP_CLIENT_ID && AIRSHIP_CLIENT_SECRET) {
+    return `Bearer ${await getOAuthToken()}`;
+  }
+  return `Basic ${AIRSHIP_AUTH}`;
+}
 
 function ok(body, statusCode = 200) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
@@ -484,7 +568,7 @@ async function handleRegistration(body) {
   const regRes = await fetch(`${AIRSHIP_BASE_URL}/api/channels/open`, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${AIRSHIP_AUTH}`,
+      Authorization: await getAuthHeader(),
       'Content-Type': 'application/json',
       Accept: 'application/vnd.urbanairship+json; version=3',
     },
@@ -500,7 +584,7 @@ async function handleRegistration(body) {
     const assocRes = await fetch(`${AIRSHIP_BASE_URL}/api/named_users/associate`, {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${AIRSHIP_AUTH}`,
+        Authorization: await getAuthHeader(),
         'Content-Type': 'application/json',
         Accept: 'application/vnd.urbanairship+json; version=3',
       },
@@ -654,7 +738,7 @@ curl -X POST https://your-service/register \
 ### Step 3 — Send a push via Airship API
 
 ```bash
-curl -X POST https://go.urbanairship.com/api/push \
+curl -X POST https://api.asnapius.com/api/push \
   -H "Authorization: Basic <base64(app_key:master_secret)>" \
   -H "Content-Type: application/json" \
   -H "Accept: application/vnd.urbanairship+json; version=3" \

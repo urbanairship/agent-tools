@@ -2,16 +2,16 @@
   "description": "Paginated request using start parameter with channel_id from previous page",
   "request": {
     "method": "GET",
-    "url": "https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c",
+    "url": "https://{base_url}/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c",
     "headers": {
       "Accept": "application/vnd.urbanairship+json; version=3",
-      "Authorization": "Bearer <token>"
+      "Authorization": "Bearer <oauth_token>",
     }
   },
   "response": {
     "status": 200,
     "headers": {
-      "Link": "<https:\/\/go.urbanairship.com\/api\/channels?limit=1000&start=a1c0e94e-4b07-4b26-bead-a1c0e94e133c>; rel=\"next\""
+      "Link": "<https://{base_url}/api/channels?limit=1000&start=a1c0e94e-4b07-4b26-bead-a1c0e94e133c>; rel=\"next\""
     },
     "body": {
       "ok": true,
@@ -35,7 +35,7 @@
           "transactional_opted_in": "2020-10-28T10:34:22"
         }
       ],
-      "next_page": "https://go.urbanairship.com/api/channels?limit=1000&start=a1c0e94e-4b07-4b26-bead-a1c0e94e133c"
+      "next_page": "https://{base_url}/api/channels?limit=1000&start=a1c0e94e-4b07-4b26-bead-a1c0e94e133c"
     }
   },
   "notes": "Use the channel_id from the last item of the previous page as the start parameter, or use the next_page URL directly."

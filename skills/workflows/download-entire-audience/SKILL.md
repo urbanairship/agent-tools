@@ -64,7 +64,7 @@ For each thread, make paginated requests to the channel listing API:
 
 ```json
 GET /api/channels?limit=1000&start={thread_start_uuid}
-Authorization: Bearer <token>
+Authorization: Bearer <oauth_token>
 Accept: application/vnd.urbanairship+json; version=3
 ```
 
@@ -88,7 +88,7 @@ Accept: application/vnd.urbanairship+json; version=3
       }
     }
   ],
-  "next_page": "https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c"
+  "next_page": "https://api.asnapius.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c"
 }
 ```
 
@@ -159,7 +159,7 @@ def paginate_thread(hex_digit, next_hex_digit):
     
     while True:
         response = requests.get(
-            'https://go.urbanairship.com/api/channels',
+            'https://api.asnapius.com/api/channels',
             params={'limit': 1000, 'start': start_uuid},
             headers={'Authorization': 'Bearer <token>'}
         )

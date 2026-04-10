@@ -58,7 +58,8 @@ The POS system emits a custom event with the purchase details:
 
 ```json
 POST /api/custom-events
-Authorization: Bearer <token>
+Authorization: Bearer <oauth_token>
+X-UA-Appkey: <application_key>
 Content-Type: application/json
 
 [
@@ -95,7 +96,7 @@ Content-Type: application/json
 ```json
 {
   "ok": true,
-  "operation_id": "ef625038-70a3-41f1-826f-57bc11dd625a"
+  "operationId": "ef625038-70a3-41f1-826f-57bc11dd625a"
 }
 ```
 

@@ -2,7 +2,7 @@
   "description": "Replace an email channel with a new email address",
   "request": {
     "method": "POST",
-    "url": "https://go.urbanairship.com/api/channels/email/replace/251d3318-b3cb-4e9f-876a-ea3bfa6e47bd",
+    "url": "https://{base_url}/api/channels/email/replace/251d3318-b3cb-4e9f-876a-ea3bfa6e47bd",
     "headers": {
       "Accept": "application/vnd.urbanairship+json; version=3",
       "Content-Type": "application/json",
@@ -22,7 +22,7 @@
   "response": {
     "status": 201,
     "headers": {
-      "Location": "https://go.urbanairship.com/api/channels/email/a7808f6b-5cd8-458b-88d0-96eceEXAMPLE"
+      "Location": "https://{base_url}/api/channels/email/a7808f6b-5cd8-458b-88d0-96eceEXAMPLE"
     },
     "body": {
       "ok": true,

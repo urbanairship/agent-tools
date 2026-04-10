@@ -29,7 +29,7 @@
           }
         }
       },
-      "url": "https://go.urbanairship.com/api/pipelines/3987f98s-89s3-cx98-8z89-89adjkl29zds"
+      "url": "https://{base_url}/api/pipelines/3987f98s-89s3-cx98-8z89-89adjkl29zds"
     }
   ],
   "total_count": 1,

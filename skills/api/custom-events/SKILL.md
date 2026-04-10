@@ -25,16 +25,31 @@ This skill enables agents to submit custom events to Airship for user tracking, 
 
 ## Authentication
 
-- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `evt` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+| Method | Endpoint | Scope |
+|---|---|---|
+| OAuth (recommended) | `api.asnapius.com` | `evt` |
+| Bearer token | `go.urbanairship.com` | — |
 
-> **MCP server**: set `AIRSHIP_BEARER_TOKEN` + `AIRSHIP_APP_KEY`. `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
+See [Authentication Guide](../../AUTHENTICATION.md) for token request details and MCP setup.
 
-**Headers**:
+> `X-UA-Appkey: <application_key>` is required for this endpoint regardless of auth method.
+
+**Headers** (`X-UA-Appkey` required for this endpoint):
+
+**OAuth** (`api.asnapius.com`):
 ```
-Authorization: Bearer <bearer_token>
 X-UA-Appkey: <application_key>
-Accept: application/vnd.urbanairship+json; version=3
+Authorization: Bearer <oauth_token>
 Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Bearer token** (`go.urbanairship.com`):
+```
+X-UA-Appkey: <application_key>
+Authorization: Bearer <dashboard_token>
+Content-Type: application/json
+Accept: application/vnd.urbanairship+json; version=3
 ```
 
 ## Request Schema
@@ -127,7 +142,7 @@ The `body.properties` object:
 ```json
 {
   "ok": true,
-  "operation_id": "ef625038-70a3-41f1-826f-57bc11dd625a"
+  "operationId": "ef625038-70a3-41f1-826f-57bc11dd625a"
 }
 ```
 

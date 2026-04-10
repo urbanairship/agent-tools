@@ -27,14 +27,31 @@ This skill enables agents to list pipelines (automations) in Airship with suppor
 
 ## Authentication
 
-- **OAuth Token**: `Authorization: Bearer <oauth_token>` with scope `pln` — obtain via OAuth client credentials (POST `grant_type=client_credentials&sub=app:<app_key>`) or dashboard-generated token
+| Method | Endpoint | Scope |
+|---|---|---|
+| OAuth (recommended) | `api.asnapius.com` | `pln` |
+| Bearer token | `go.urbanairship.com` | — |
+| Basic | `go.urbanairship.com` | — |
 
-> **MCP server**: set `AIRSHIP_BEARER_TOKEN`. `AIRSHIP_REGION` defaults to `us`. See [setup guide](../../../README.md).
+See [Authentication Guide](../../AUTHENTICATION.md) for token request details and MCP setup.
 
 **Headers**:
+
+**OAuth** (`api.asnapius.com`):
 ```
-Authorization: Bearer <bearer_token>
-X-UA-Appkey: <application_key>
+Authorization: Bearer <oauth_token>
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Bearer token** (`go.urbanairship.com`):
+```
+Authorization: Bearer <dashboard_token>
+Accept: application/vnd.urbanairship+json; version=3
+```
+
+**Basic** (`go.urbanairship.com`):
+```
+Authorization: Basic <base64(app_key:master_secret)>
 Accept: application/vnd.urbanairship+json; version=3
 ```
 
@@ -102,11 +119,11 @@ All parameters from `/api/pipelines`, plus:
           }
         }
       },
-      "url": "https:\/\/go.urbanairship.com/api/pipelines/abc123-def456"
+      "url": "https://api.asnapius.com/api/pipelines/abc123-def456"
     }
   ],
   "total_count": 42,
-  "next_page": "https:\/\/go.urbanairship.com/api/pipelines/filtered?start=20&limit=20",
+  "next_page": "https://api.asnapius.com/api/pipelines/filtered?start=20&limit=20",
   // Note: url and next_page hostnames reflect the base URL used for the request (US or EU)
   "prev_page": null
 }
@@ -222,7 +239,7 @@ See `examples/multiple-triggers.json` for a complete response example.
 
 ```
 GET /api/pipelines?limit=20
-Authorization: Bearer <token>
+Authorization: Bearer <oauth_token>
 Accept: application/vnd.urbanairship+json; version=3
 ```
 
@@ -230,7 +247,7 @@ Accept: application/vnd.urbanairship+json; version=3
 
 ```
 GET /api/pipelines/filtered?triggers=CUSTOM_EVENT&enabled=true&limit=50
-Authorization: Bearer <token>
+Authorization: Bearer <oauth_token>
 Accept: application/vnd.urbanairship+json; version=3
 ```
 
@@ -238,7 +255,7 @@ Accept: application/vnd.urbanairship+json; version=3
 
 ```
 GET /api/pipelines/filtered?enabled=true&limit=25&start=0&sort=name&order=asc
-Authorization: Bearer <token>
+Authorization: Bearer <oauth_token>
 Accept: application/vnd.urbanairship+json; version=3
 ```
 
@@ -246,7 +263,7 @@ Accept: application/vnd.urbanairship+json; version=3
 
 ```
 GET /api/pipelines/filtered?prefix=purchase&limit=20
-Authorization: Bearer <token>
+Authorization: Bearer <oauth_token>
 Accept: application/vnd.urbanairship+json; version=3
 ```
 

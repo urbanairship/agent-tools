@@ -37,7 +37,7 @@
           }
         }
       },
-      "url": "https://go.urbanairship.com/api/pipelines/pipeline-multi-trigger-456"
+      "url": "https://{base_url}/api/pipelines/pipeline-multi-trigger-456"
     }
   ],
   "total_count": 1,

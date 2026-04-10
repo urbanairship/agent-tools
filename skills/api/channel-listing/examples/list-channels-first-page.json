@@ -2,16 +2,16 @@
   "description": "List first page of channels without start parameter",
   "request": {
     "method": "GET",
-    "url": "https://go.urbanairship.com/api/channels?limit=1000",
+    "url": "https://{base_url}/api/channels?limit=1000",
     "headers": {
       "Accept": "application/vnd.urbanairship+json; version=3",
-      "Authorization": "Bearer <token>"
+      "Authorization": "Bearer <oauth_token>",
     }
   },
   "response": {
     "status": 200,
     "headers": {
-      "Link": "<https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c>; rel=\"next\""
+      "Link": "<https://{base_url}/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c>; rel=\"next\""
     },
     "body": {
       "ok": true,
@@ -68,7 +68,7 @@
           }
         }
       ],
-      "next_page": "https://go.urbanairship.com/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c"
+      "next_page": "https://{base_url}/api/channels?limit=1000&start=535ec31e-4b07-4b26-bead-a1c0e94e133c"
     }
   }
 }
