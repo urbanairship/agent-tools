@@ -231,7 +231,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
 
 ## Related Workflows
 
-- None currently
+- **[Extract Unique Tags and Attributes](../extract-unique-tags-and-attributes/SKILL.md)** - Build a metadata-only JSON catalog of grouped tags, attribute keys, device attribute keys, and subscription lists from downloaded audience data
 
 ## Best Practices
 

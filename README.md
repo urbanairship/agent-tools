@@ -95,7 +95,7 @@ skills/
 ├── mobile/        push, message-center, migration, custom-views, sdk-reference
 ├── rtds/          rtds-connection
 ├── wallet/        update-wallet-pass
-└── workflows/     complete-user-onboarding, register-associate-email, ...
+└── workflows/     complete-user-onboarding, register-associate-email, extract-unique-tags-and-attributes, ...
 ```
 
 ### Install by assistant
