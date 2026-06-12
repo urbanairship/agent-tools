@@ -1170,7 +1170,7 @@ async def scan_rtds_events(
     max_events: int = 50,
     timeout_seconds: int = 60,
 ) -> Dict[str, Any]:
-    """Scan Airship RTDS for custom events within a lookback window, then close the stream.
+    """Scan Airship RTDS for CUSTOM events by name, then close the stream.
 
     BEFORE calling this tool, ask the user how far back to look if they haven't said.
     Default is 10 minutes; max is 7 days (RTDS retention limit).
@@ -1179,6 +1179,8 @@ async def scan_rtds_events(
     `lookback_minutes` of now. Closes automatically once it detects the stream has
     caught up to the live position (by comparing each event's `processed` timestamp
     to the time the stream was opened). `timeout_seconds` is a hard safety cap.
+
+    Use scan_rtds_sends instead if you want SEND/delivery events or push attribution.
 
     Args:
         event_name: Custom event name to search for, e.g. "grande_session_end"
@@ -1200,6 +1202,84 @@ async def scan_rtds_events(
         lookback_minutes=lookback_minutes,
         max_events=max_events,
         timeout_seconds=timeout_seconds,
+    )
+
+
+@mcp.tool
+async def scan_rtds_sends(
+    named_user_id: str = None,
+    channel_id: str = None,
+    rtds_token: str = None,
+    lookback_minutes: int = 240,
+    max_events: int = 100,
+    timeout_seconds: int = 90,
+    include_push_body: bool = True,
+) -> Dict[str, Any]:
+    """Scan Airship RTDS for all messages sent to a user/channel and close the stream.
+
+    Collects SEND, SEND_REJECTED, SEND_ABORTED, and PUSH_BODY events within the
+    lookback window. Returns events newest-first with decoded payloads and attribution.
+
+    ## RTDS event types collected
+
+    SEND — message was dispatched to the channel. Body fields:
+      push_id        unique push operation UUID (join key across SEND/PUSH_BODY/OPEN)
+      group_id       recurring or interval-scheduled push group
+      variant_id     A/B test variant
+      campaigns      { categories: [...] } — labels set on manual/broadcast pushes
+      push_type      UNICAST | BROADCAST | SEGMENT
+      payload        full notification payload (alert, title, extras, actions, APS/FCM)
+
+    NOTE: For pipeline/journey-triggered pushes, SEND events may be absent from the
+    stream. PUSH_BODY is the primary event type for journey attribution in that case.
+
+    SEND_REJECTED — push was blocked before delivery (e.g. opted-out, suppressed).
+      Same fields as SEND; add `reason` explaining the block.
+
+    SEND_ABORTED — push was cancelled mid-flight. Same fields + reason.
+
+    PUSH_BODY — full pipeline/notification snapshot at send time. Key decoded fields:
+      body.payload.name              pipeline name (e.g. "Coastal Edit Campaign 1")
+      body.payload.immediate_trigger what triggered this step (segmentation_result,
+                                     pipeline_event, custom_event, tag_added, etc.)
+      body.payload.outcome.push      notification payload (alert text, actions)
+      body.payload.workflow          parent workflow UUID
+      body.group_id                  pipeline UUID (links multiple PUSH_BODY firings)
+      NOTE: body.payload is base64-encoded in the raw stream; this tool decodes it
+      automatically. body.campaigns is always null for PUSH_BODY events.
+
+    ## Journey attribution
+    For pipeline-triggered pushes: read body.payload.name for the journey name and
+    body.payload.immediate_trigger for the entry condition.
+    For manual/broadcast pushes: read body.campaigns.categories.
+    Join on push_id (SEND ↔ PUSH_BODY ↔ downstream OPEN/CUSTOM via
+    body.triggering_push.push_id).
+
+    ## PUSH_BODY window filtering
+    The RTDS server-side latency filter does not apply reliably to PUSH_BODY events
+    (their `occurred` field can reflect pipeline config time, not send time). This
+    tool applies a client-side filter on `processed` time for PUSH_BODY events.
+
+    Args:
+        named_user_id: Named user to filter on (e.g. "mia@23grande.demo")
+        channel_id: Channel UUID to filter on instead of named_user_id
+        rtds_token: RTDS Direct Integration bearer token. Falls back to AIRSHIP_RTDS_TOKEN env var.
+        lookback_minutes: How far back to scan (default 240 = 4 hours; max 10080 = 7 days)
+        max_events: Max events to collect across all types (default 100)
+        timeout_seconds: Hard wall-clock cap in seconds (default 90)
+        include_push_body: Include PUSH_BODY events (default true; set false for SEND-only)
+
+    Returns:
+        status, event_types, lookback_minutes, events_found, events list (newest first)
+    """
+    return await api_tools.scan_rtds_sends(
+        named_user_id=named_user_id,
+        channel_id=channel_id,
+        rtds_token=rtds_token,
+        lookback_minutes=lookback_minutes,
+        max_events=max_events,
+        timeout_seconds=timeout_seconds,
+        include_push_body=include_push_body,
     )
 
 

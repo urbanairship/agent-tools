@@ -44,11 +44,12 @@ Call cleanup() on shutdown to close the client and cancel the refresh task.
 # =============================================================================
 
 import asyncio
+import base64
 import json
 import os
 import sys
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 from pydantic import ValidationError
 from .auth import AirshipAuth
 from .validators import PushToTagPayload, PushToChannelPayload, MessageCenterPayload, transform_validation_error
@@ -902,29 +903,83 @@ async def call_airship_api(
         }
 
 
-async def scan_rtds_events(
-    event_name: str,
+async def scan_rtds(
+    event_types: List[str],
     named_user_id: Optional[str] = None,
     channel_id: Optional[str] = None,
     rtds_token: Optional[str] = None,
     lookback_minutes: int = 10,
     max_events: int = 50,
     timeout_seconds: int = 60,
+    body_name_filter: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Scan RTDS for custom events within a lookback window.
+    Core RTDS scanner. Streams any combination of RTDS event types within a lookback
+    window and closes automatically once the stream catches up to live.
 
-    Uses RTDS's latency filter to restrict delivery to events that occurred within
-    the last `lookback_minutes` minutes. Closes the stream as soon as it has caught
-    up to the live position (detected by comparing each event's `processed` timestamp
-    to the time the stream was opened). Falls back to `timeout_seconds` as a hard cap.
+    Supports all event types from the Airship Connect API event stream:
+      - SEND, SEND_REJECTED, SEND_ABORTED   push delivery outcomes
+      - PUSH_BODY                            full notification payload at send time
+      - OPEN, FIRST_OPEN                    app open / first open
+      - CLOSE                               app background/close (session_id links to OPEN)
+      - CUSTOM                              custom events (body.name / body.properties)
+      - TAG_CHANGE                          tag mutations
+      - ATTRIBUTE_OPERATION                 attribute set/remove
+      - CONTACT_CHANGE                      named-user association changes
+      - SUBSCRIPTION / SUBSCRIPTION_LIST    opt-in/opt-out changes
+      - UNINSTALL                           channel removal
+      - REGION                              geofence entry/exit
+      - SCREEN_VIEWED                       screen tracking
+      - IN_APP_MESSAGE_DISPLAY              IAM impression
+      - IN_APP_MESSAGE_RESOLUTION           IAM dismiss/button tap
+      - IN_APP_BUTTON_TAP                   IAM button
+      - IN_APP_FORM_DISPLAY                 survey/NPS display
+      - IN_APP_FORM_RESULT                  survey/NPS response
+      - IN_APP_PAGER_SUMMARY                pager completion stats
+      - IN_APP_PAGER_COMPLETED              pager sequence done
+      - IN_APP_PAGE_VIEW / IN_APP_PAGE_SWIPE  pager page events
+      - IN_APP_EXPERIENCES                  Thomas scene events
+      - IN_APP_MESSAGE_CONTROL              holdout/control group
+      - IN_APP_MESSAGE_EXCLUSION            excluded from IAM
+      - IN_APP_MESSAGE_EXPIRATION           IAM expired before display
+      - RICH_DELIVERY / RICH_READ / RICH_DELETE / RICH_CONTROL  Message Center events
+      - WEB_CLICK / WEB_SESSION             web channel events
+      - SHORT_LINK_CLICK                    shortened link tap
+      - MOBILE_ORIGINATED                   SMS MO (inbound SMS)
+      - LABEL_EVENT                         content label interaction
+      - LOCATION                            location permission / update
+      - FEATURE_FLAG_INTERACTION            feature flag evaluation
+      - CONTROL                             A/B test holdout event
+      - COMPLIANCE                          email/SMS compliance (separate endpoint)
 
-    RTDS retains up to 7 days (or 100 GB) of data per app key. Lookback values
-    beyond 7 days are clamped to 7 days.
+    All events share: id, type, occurred, processed, offset, device (channel,
+    device_type, named_user_id), user (contact_id, named_user_id).
 
-    Returns events sorted newest-first.
+    Attribution fields on SEND and most interaction events:
+      body.push_id         — unique ID for the push operation
+      body.group_id        — recurring/interval push identifier
+      body.variant_id      — A/B test variant
+      body.campaigns       — { categories: [...] } — journey/automation labels set on
+                             the automation in the Airship dashboard. NOTE: this field
+                             is null for pipeline-triggered pushes; attribution for
+                             those comes from the decoded PUSH_BODY payload (see below).
+      body.triggering_push — the push that initiated this session (on OPEN/CLOSE/CUSTOM)
+
+    PUSH_BODY quirks (important):
+      - body.payload is base64-encoded JSON and is automatically decoded in-place by
+        this function before returning. The decoded object contains: name (pipeline
+        name), uid, immediate_trigger, cancellation_trigger, outcome (push payload
+        with alert text), workflow, timing.
+      - body.campaigns is always null for PUSH_BODY events. Use payload.name for the
+        journey/pipeline name and payload.immediate_trigger for what triggered it.
+      - The RTDS latency filter (server-side, anchored to `occurred`) does not work
+        reliably for PUSH_BODY events — `occurred` can reflect a pipeline configuration
+        timestamp rather than the actual send time. This function applies a client-side
+        window filter using `processed` time for PUSH_BODY events to compensate.
+
+    RTDS retains up to 7 days or 100 GB per app key.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime, timezone, timedelta
 
     token = rtds_token or os.environ.get("AIRSHIP_RTDS_TOKEN")
     if not token:
@@ -941,7 +996,6 @@ async def scan_rtds_events(
     if auth is None:
         return _not_ready()
 
-    # Clamp lookback to RTDS retention window (7 days).
     MAX_LOOKBACK_MINUTES = 7 * 24 * 60
     lookback_minutes = min(lookback_minutes, MAX_LOOKBACK_MINUTES)
     latency_ms = lookback_minutes * 60 * 1000
@@ -950,7 +1004,7 @@ async def scan_rtds_events(
     base_url = "https://connect.urbanairship.com" if region == "us" else "https://connect.asnapieu.com"
 
     filters: list = [
-        {"types": ["CUSTOM"]},
+        {"types": event_types},
         {"latency": latency_ms},
     ]
     if named_user_id:
@@ -958,10 +1012,11 @@ async def scan_rtds_events(
     elif channel_id:
         filters.append({"devices": [{"channel": channel_id}]})
 
-    body: Dict[str, Any] = {"start": "EARLIEST", "filters": filters}
+    request_body: Dict[str, Any] = {"start": "EARLIEST", "filters": filters}
 
     found: list = []
     stream_open_time = datetime.now(timezone.utc)
+    lookback_cutoff = stream_open_time - timedelta(minutes=lookback_minutes)
 
     async def _stream() -> None:
         async with httpx.AsyncClient(
@@ -974,7 +1029,7 @@ async def scan_rtds_events(
             },
             timeout=httpx.Timeout(connect=10.0, read=timeout_seconds, write=10.0, pool=5.0),
         ) as rtds_client:
-            async with rtds_client.stream("POST", "/api/events", json=body) as resp:
+            async with rtds_client.stream("POST", "/api/events", json=request_body) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
                     if not line.strip():
@@ -994,9 +1049,34 @@ async def scan_rtds_events(
                         except ValueError:
                             pass
 
-                    name = (event.get("body") or {}).get("name", "")
-                    if name != event_name:
-                        continue
+                    # Client-side window filter. PUSH_BODY `occurred` reflects pipeline
+                    # config time, not send time, so use `processed` for those events.
+                    is_push_body = event.get("type") == "PUSH_BODY"
+                    window_ts_str = (event.get("processed", "") if is_push_body
+                                     else event.get("occurred", ""))
+                    if window_ts_str:
+                        try:
+                            window_ts = datetime.fromisoformat(window_ts_str.replace("Z", "+00:00"))
+                            if window_ts < lookback_cutoff:
+                                continue
+                        except ValueError:
+                            pass
+
+                    # Auto-decode base64 payload in PUSH_BODY events.
+                    if is_push_body:
+                        body = event.get("body") or {}
+                        raw = body.get("payload")
+                        if isinstance(raw, str):
+                            try:
+                                decoded = json.loads(base64.b64decode(raw).decode("utf-8"))
+                                event = dict(event)
+                                event["body"] = dict(body, payload=decoded)
+                            except Exception:
+                                pass
+
+                    if body_name_filter is not None:
+                        if (event.get("body") or {}).get("name", "") != body_name_filter:
+                            continue
 
                     found.append(event)
                     if len(found) >= max_events:
@@ -1020,13 +1100,89 @@ async def scan_rtds_events(
 
     return {
         "status": "success",
-        "event_name": event_name,
+        "event_types": event_types,
         "named_user_id": named_user_id,
         "channel_id": channel_id,
         "lookback_minutes": lookback_minutes,
         "events_found": len(found),
         "events": found,
     }
+
+
+async def scan_rtds_events(
+    event_name: str,
+    named_user_id: Optional[str] = None,
+    channel_id: Optional[str] = None,
+    rtds_token: Optional[str] = None,
+    lookback_minutes: int = 10,
+    max_events: int = 50,
+    timeout_seconds: int = 60,
+) -> Dict[str, Any]:
+    """Scan RTDS for CUSTOM events by name. Delegates to scan_rtds()."""
+    result = await scan_rtds(
+        event_types=["CUSTOM"],
+        named_user_id=named_user_id,
+        channel_id=channel_id,
+        rtds_token=rtds_token,
+        lookback_minutes=lookback_minutes,
+        max_events=max_events,
+        timeout_seconds=timeout_seconds,
+        body_name_filter=event_name,
+    )
+    if result.get("status") == "success":
+        result["event_name"] = event_name
+    return result
+
+
+async def scan_rtds_sends(
+    named_user_id: Optional[str] = None,
+    channel_id: Optional[str] = None,
+    rtds_token: Optional[str] = None,
+    lookback_minutes: int = 240,
+    max_events: int = 100,
+    timeout_seconds: int = 90,
+    include_push_body: bool = True,
+) -> Dict[str, Any]:
+    """
+    Scan RTDS for all messages sent to a user/channel within a lookback window.
+
+    Collects SEND, SEND_REJECTED, SEND_ABORTED, and optionally PUSH_BODY events.
+    Each event carries full journey/campaign attribution in the body.
+
+    SEND body fields:
+      push_id       — unique push operation ID (links SEND ↔ PUSH_BODY ↔ OPEN)
+      group_id      — recurring/scheduled push group
+      variant_id    — A/B test variant
+      campaigns     — { categories: [...] } journey labels set on the automation
+      push_type     — UNICAST / BROADCAST / SEGMENT
+      payload       — full notification payload (alert, title, extras, actions)
+      device_type   — IOS / ANDROID / EMAIL / SMS / WEB / OPEN
+      channel_id    — receiving channel UUID
+
+    SEND_REJECTED / SEND_ABORTED body:
+      same attribution fields; reason field explains why the send was blocked
+
+    PUSH_BODY body:
+      push_id       — matches the SEND event's push_id for correlation
+      payload       — full APS / FCM / email payload at the moment of send
+
+    Attribution tip: join on push_id to correlate SEND ↔ PUSH_BODY ↔ downstream
+    OPEN / CUSTOM events (via their body.triggering_push.push_id field).
+    """
+    event_types = ["SEND", "SEND_REJECTED", "SEND_ABORTED"]
+    if include_push_body:
+        event_types.append("PUSH_BODY")
+
+    result = await scan_rtds(
+        event_types=event_types,
+        named_user_id=named_user_id,
+        channel_id=channel_id,
+        rtds_token=rtds_token,
+        lookback_minutes=lookback_minutes,
+        max_events=max_events,
+        timeout_seconds=timeout_seconds,
+    )
+    return result
 
 
 async def validate_push_payload(

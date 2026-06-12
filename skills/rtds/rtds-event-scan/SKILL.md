@@ -51,6 +51,23 @@ RTDS has no native "stop at now" signal — the stream stays open indefinitely b
 
 `timeout_seconds` is a hard safety cap in case the catch-up signal takes too long.
 
+## PUSH_BODY Events
+
+When scanning for journey/pipeline attribution, `scan_rtds_events` with `event_types: ["PUSH_BODY"]` (or `scan_rtds_sends` with `include_push_body: true`) gives you the best signal.
+
+Key PUSH_BODY facts:
+
+- `body.payload` arrives base64-encoded in the raw stream; this tool decodes it automatically to structured JSON.
+- Decoded `body.payload.name` contains the pipeline/journey name (e.g. "Coastal Edit Campaign 1").
+- Decoded `body.payload.immediate_trigger` describes what triggered this pipeline step (`segmentation_result`, `pipeline_event`, `custom_event`, `tag_added`, etc.).
+- `body.campaigns` is always `null` for pipeline-triggered pushes. Do not use it for journey attribution.
+- `body.group_id` is the pipeline UUID; it groups all PUSH_BODY events that fired for the same pipeline definition.
+- For pipeline-triggered pushes, SEND events may not appear in the stream at all. PUSH_BODY is the primary record.
+
+### `occurred` is unreliable for PUSH_BODY
+
+PUSH_BODY `occurred` reflects when the pipeline definition was configured in the dashboard, not when the push was sent. The RTDS server-side latency filter is based on `occurred`, so it may not correctly filter PUSH_BODY events. This tool applies a client-side filter using `processed` time instead.
+
 ## RTDS Retention
 
 Airship retains up to **7 days** or **100 GB** per app key, whichever comes first. Lookback values beyond 7 days are clamped to 7 days.
