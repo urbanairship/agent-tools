@@ -1160,6 +1160,49 @@ async def call_airship_api(
     return await api_tools.call_airship_api(method, path, body, params, headers)
 
 
+@mcp.tool
+async def scan_rtds_events(
+    event_name: str,
+    named_user_id: str = None,
+    channel_id: str = None,
+    rtds_token: str = None,
+    lookback_minutes: int = 10,
+    max_events: int = 50,
+    timeout_seconds: int = 60,
+) -> Dict[str, Any]:
+    """Scan Airship RTDS for custom events within a lookback window, then close the stream.
+
+    BEFORE calling this tool, ask the user how far back to look if they haven't said.
+    Default is 10 minutes; max is 7 days (RTDS retention limit).
+
+    Uses the RTDS latency filter to restrict delivery to events that occurred within
+    `lookback_minutes` of now. Closes automatically once it detects the stream has
+    caught up to the live position (by comparing each event's `processed` timestamp
+    to the time the stream was opened). `timeout_seconds` is a hard safety cap.
+
+    Args:
+        event_name: Custom event name to search for, e.g. "grande_session_end"
+        named_user_id: Limit scan to this named user (optional)
+        channel_id: Limit scan to this channel ID instead (optional)
+        rtds_token: RTDS Direct Integration bearer token. Falls back to AIRSHIP_RTDS_TOKEN env var.
+        lookback_minutes: How far back to scan, in minutes (default 10, max 10080 = 7 days)
+        max_events: Cap on matching events to collect (default 50)
+        timeout_seconds: Hard wall-clock cap in seconds (default 60)
+
+    Returns:
+        status, event_name, lookback_minutes, events_found count, and events list (newest first)
+    """
+    return await api_tools.scan_rtds_events(
+        event_name=event_name,
+        named_user_id=named_user_id,
+        channel_id=channel_id,
+        rtds_token=rtds_token,
+        lookback_minutes=lookback_minutes,
+        max_events=max_events,
+        timeout_seconds=timeout_seconds,
+    )
+
+
 # =============================================================================
 # Push API Tools
 # =============================================================================

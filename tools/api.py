@@ -44,6 +44,7 @@ Call cleanup() on shutdown to close the client and cancel the refresh task.
 # =============================================================================
 
 import asyncio
+import json
 import os
 import sys
 import httpx
@@ -899,6 +900,133 @@ async def call_airship_api(
             "path": path,
             "method": method,
         }
+
+
+async def scan_rtds_events(
+    event_name: str,
+    named_user_id: Optional[str] = None,
+    channel_id: Optional[str] = None,
+    rtds_token: Optional[str] = None,
+    lookback_minutes: int = 10,
+    max_events: int = 50,
+    timeout_seconds: int = 60,
+) -> Dict[str, Any]:
+    """
+    Scan RTDS for custom events within a lookback window.
+
+    Uses RTDS's latency filter to restrict delivery to events that occurred within
+    the last `lookback_minutes` minutes. Closes the stream as soon as it has caught
+    up to the live position (detected by comparing each event's `processed` timestamp
+    to the time the stream was opened). Falls back to `timeout_seconds` as a hard cap.
+
+    RTDS retains up to 7 days (or 100 GB) of data per app key. Lookback values
+    beyond 7 days are clamped to 7 days.
+
+    Returns events sorted newest-first.
+    """
+    from datetime import datetime, timezone
+
+    token = rtds_token or os.environ.get("AIRSHIP_RTDS_TOKEN")
+    if not token:
+        return {
+            "status": "error",
+            "error": "missing_rtds_token",
+            "message": (
+                "No RTDS token provided. Pass rtds_token= or set AIRSHIP_RTDS_TOKEN. "
+                "Obtain a Direct Integration token from the Airship dashboard under "
+                "Real-Time Data Streaming."
+            ),
+        }
+
+    if auth is None:
+        return _not_ready()
+
+    # Clamp lookback to RTDS retention window (7 days).
+    MAX_LOOKBACK_MINUTES = 7 * 24 * 60
+    lookback_minutes = min(lookback_minutes, MAX_LOOKBACK_MINUTES)
+    latency_ms = lookback_minutes * 60 * 1000
+
+    region = os.environ.get("AIRSHIP_REGION", "us").lower()
+    base_url = "https://connect.urbanairship.com" if region == "us" else "https://connect.asnapieu.com"
+
+    filters: list = [
+        {"types": ["CUSTOM"]},
+        {"latency": latency_ms},
+    ]
+    if named_user_id:
+        filters.append({"users": [{"named_user_id": named_user_id}]})
+    elif channel_id:
+        filters.append({"devices": [{"channel": channel_id}]})
+
+    body: Dict[str, Any] = {"start": "EARLIEST", "filters": filters}
+
+    found: list = []
+    stream_open_time = datetime.now(timezone.utc)
+
+    async def _stream() -> None:
+        async with httpx.AsyncClient(
+            base_url=base_url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-UA-Appkey": auth.app_key,
+                "Accept": "application/vnd.urbanairship+x-ndjson; version=3;",
+                "Content-Type": "application/json",
+            },
+            timeout=httpx.Timeout(connect=10.0, read=timeout_seconds, write=10.0, pool=5.0),
+        ) as rtds_client:
+            async with rtds_client.stream("POST", "/api/events", json=body) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.strip():
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except Exception:
+                        continue
+
+                    # Stop once we've caught up to the live position.
+                    processed_str = event.get("processed", "")
+                    if processed_str:
+                        try:
+                            processed = datetime.fromisoformat(processed_str.replace("Z", "+00:00"))
+                            if processed >= stream_open_time:
+                                break
+                        except ValueError:
+                            pass
+
+                    name = (event.get("body") or {}).get("name", "")
+                    if name != event_name:
+                        continue
+
+                    found.append(event)
+                    if len(found) >= max_events:
+                        break
+
+    try:
+        await asyncio.wait_for(_stream(), timeout=timeout_seconds)
+    except asyncio.TimeoutError:
+        pass
+    except httpx.HTTPStatusError as e:
+        return {
+            "status": "error",
+            "error": "rtds_http_error",
+            "status_code": e.response.status_code,
+            "message": str(e),
+        }
+    except Exception as e:
+        return {"status": "error", "error": "rtds_error", "message": str(e)}
+
+    found.sort(key=lambda e: e.get("occurred", ""), reverse=True)
+
+    return {
+        "status": "success",
+        "event_name": event_name,
+        "named_user_id": named_user_id,
+        "channel_id": channel_id,
+        "lookback_minutes": lookback_minutes,
+        "events_found": len(found),
+        "events": found,
+    }
 
 
 async def validate_push_payload(
