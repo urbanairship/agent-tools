@@ -158,12 +158,16 @@ async def lifespan(app):
         os.environ.get("AIRSHIP_CLIENT_SECRET"),
         os.environ.get("AIRSHIP_APP_KEY"),
     ])
+    _oauth_ready = False
     if _creds_present:
         try:
             await api_tools.init_oauth()
+            _oauth_ready = True
         except Exception as e:
-            print(f"OAuth initialization failed: {e}", file=sys.stderr)
-            raise
+            # FastMCP 3.4+ runs the lifespan before stdio is established, so raising
+            # here prevents the server from connecting at all. Log and continue instead
+            # so skill tools remain available even when OAuth fails.
+            print(f"OAuth initialization failed: {e} — API tools unavailable.", file=sys.stderr)
     else:
         print(
             "OAuth credentials not set — API tools unavailable. "
@@ -171,7 +175,7 @@ async def lifespan(app):
             file=sys.stderr,
         )
     yield
-    if _creds_present:
+    if _oauth_ready:
         await api_tools.cleanup()
 
 
